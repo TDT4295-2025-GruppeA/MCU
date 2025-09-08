@@ -1,0 +1,14 @@
+../Core/Src/main.c:41:5:main	8
+../Core/Src/main.c:132:6:BSP_PB_Callback	6
+../Core/Src/main.c:162:6:Test_SPI_Loopback	7
+../Core/Src/main.c:214:6:Test_SPI_Basic	3
+../Core/Src/main.c:249:6:Test_FPGA_Commands	4
+../Core/Src/main.c:321:13:MX_USART1_UART_Init	2
+../Core/Src/main.c:340:6:UART_Printf	1
+../Core/Src/main.c:352:6:HAL_UART_RxCpltCallback	15
+../Core/Src/main.c:401:6:SystemClock_Config	4
+../Core/Src/main.c:446:13:SystemPower_Config	2
+../Core/Src/main.c:465:13:MX_ICACHE_Init	3
+../Core/Src/main.c:497:13:MX_SPI1_Init	3
+../Core/Src/main.c:554:13:MX_GPIO_Init	1
+../Core/Src/main.c:576:6:Error_Handler	1
