@@ -1,5 +1,6 @@
 "./Core/Src/buttons.o"
 "./Core/Src/fpga_spi.o"
+"./Core/Src/game.o"
 "./Core/Src/main.o"
 "./Core/Src/stm32u5xx_hal_msp.o"
 "./Core/Src/stm32u5xx_it.o"
