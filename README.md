@@ -264,9 +264,9 @@ This project is developed as part of a university course. All rights reserved.
 
 For questions about:
 
-- **MCU/Game Logic**: [Your contact]
-- **FPGA Development**: [FPGA team contact]
-- **PCB Design**: [Hardware team contact]
+- **MCU/Game Logic**: [Jorgnik@ntnu.no]
+- **FPGA Development**: [Jorgfje@ntnu.no]
+- **PCB Design**: [Rikkees@ntnu.no]
 
 ---
 
