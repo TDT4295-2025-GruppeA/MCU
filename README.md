@@ -6,13 +6,15 @@ This project implements a real-time 3D graphics control system using an STM32U5 
 
 ### Team Structure
 
-- **MCU Programming** (1 person): Game logic, controller input, SPI communication
-- **FPGA Development** (3-4 people): 3D graphics rendering, display output
-- **PCB Design** (2-3 people): Hardware integration
+- **MCU Programming** (2 person): Game logic, controller input, SPI communication
+- **FPGA Development** (3 people): 3D graphics rendering, display output
+- **PCB Design** (2 people): Hardware integration
 
 ### Goal
 
 Create a simple 3D game where the player moves through a 3D space, with the STM32 handling game logic and sending coordinate data to the FPGA for rendering.
+The first databus should send the different game objects (cubes, the play character/object etc). Then the rest of the messages should specify the location of different objects to be spawned.
+We start with only moving the player in the x-axis so we fly straigth forward and spawning cubes infront to avoid.
 
 ## Current Status
 
