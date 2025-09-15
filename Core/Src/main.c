@@ -1,6 +1,6 @@
 // main.c - Simplified Main File
 #include "main.h"
-#include "game.h"
+#include "./Game/game.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>

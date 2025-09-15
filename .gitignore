@@ -1,171 +1,71 @@
-# STM32CubeIDE .gitignore
-# For STM32 projects using STM32CubeIDE/CubeMX
-
-# Prerequisites
-*.d
-
-# Object files
-*.o
-*.ko
-*.obj
-*.elf
-
-# Linker output
-*.ilk
-*.map
-*.exp
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Libraries
-*.lib
-*.a
-*.la
-*.lo
-
-# Shared objects
-*.dll
-*.so
-*.so.*
-*.dylib
-
-# Executables
-*.exe
-*.out
-*.app
-*.i*86
-*.x86_64
-*.hex
-*.bin
-
-# Debug files
-*.dSYM/
-*.su
-*.idb
-*.pdb
-*.list
-
-# Build directories
+# STM32CubeIDE / Eclipse CDT Build Artifacts
 Debug/
 Release/
-build/
-Binaries/
-Objects/
+*.launch
+*.elf
+*.bin
+*.hex
+*.map
+*.list
+*.o
+*.d
+*.su
+*.cyclo
 
-# STM32CubeIDE specific
+# IDE - STM32CubeIDE specific
 .settings/
 .metadata/
-.launch/
-RemoteSystemsTempFiles/
-
-# Eclipse CDT-specific
 .cproject
 .project
 .mxproject
-
-# STM32CubeMX backup files
-*.bak
-*_backup/
-*.tmp
-
-# IDE workspace files (user-specific)
 *.launch
-*.eww
-*.ewp
-*.ewd
-*.uvguix.*
-*.uvoptx
-*.uvprojx
+RemoteSystemsTempFiles/
 
-# Keil uVision
-*.uvguix
-*.uvopt
-*.uvproj
-Objects/
-Listings/
-*.scvd
-
-# IAR EWARM
-settings/
-*.dep
-*.ewt
-
-# Visual Studio Code
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
+# IDE - VS Code
+.vscode/
 *.code-workspace
 
-# System files
-.DS_Store
-Thumbs.db
-desktop.ini
+# Build directories (common variations)
+build/
+Build/
+debug/
+release/
+bin/
+obj/
 
 # Backup files
+*.bak
+*~
 *.swp
 *.swo
-*~
-*.orig
+*.tmp
 
-# Log files
-*.log
+# OS Generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
 
-# Documentation build
-/doc/_build/
-/docs/_build/
-Doxygen/
-
-# Python (for any scripts)
+# Python cache (if using any Python scripts)
 __pycache__/
 *.py[cod]
 *$py.class
-*.pyc
 
-# User-specific files
-*.user
-*.userosscache
-*.suo
+# Documentation build
+docs/_build/
+doxygen/
 
-# Temporary files
-*.tmp
-*.temp
-temp/
-tmp/
+# User-specific files (optional - uncomment if team uses different configs)
+# *.ioc
+# *.cfg
 
-# Core dumps
-core
-core.*
-
-# Flash files
-*.jflash
-*.jlink
-
-# OpenOCD files
-*.cfg.lock
-
-# SEGGER J-Link
-JLink*
-*.jlink
-
-# STM32CubeProgrammer
-*.stldr
-*.tsv
-
-# Binary outputs (but you might want to keep .hex for releases)
-*.axf
-*.lst
-*.sym
-
-# Patch files
-*.patch
-*.diff
-
-# Archives (usually not needed in repo)
-*.zip
-*.tar.gz
-*.rar
-*.7z
+# Keep these (project essentials)
+# !Core/
+# !Drivers/
+# !*.ioc
+# !*.ld
+# !Makefile
+# !README.md
