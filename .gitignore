@@ -69,3 +69,9 @@ doxygen/
 # !*.ld
 # !Makefile
 # !README.md
+# IDE Settings and metadata
+.settings/
+.mxproject
+
+# Optional - uncomment if you generate these from .ioc
+# *.ld
