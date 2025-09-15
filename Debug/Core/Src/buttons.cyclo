@@ -1,4 +1,0 @@
-../Core/Src/buttons.c:25:6:Buttons_Init	2
-../Core/Src/buttons.c:75:16:debounce_button	3
-../Core/Src/buttons.c:96:6:Buttons_Update	19
-../Core/Src/buttons.c:126:9:Buttons_IsAnyPressed	5

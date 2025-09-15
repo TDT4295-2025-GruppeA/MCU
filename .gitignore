@@ -1,0 +1,71 @@
+# STM32CubeIDE / Eclipse CDT Build Artifacts
+Debug/
+Release/
+*.launch
+*.elf
+*.bin
+*.hex
+*.map
+*.list
+*.o
+*.d
+*.su
+*.cyclo
+
+# IDE - STM32CubeIDE specific
+.settings/
+.metadata/
+.cproject
+.project
+.mxproject
+*.launch
+RemoteSystemsTempFiles/
+
+# IDE - VS Code
+.vscode/
+*.code-workspace
+
+# Build directories (common variations)
+build/
+Build/
+debug/
+release/
+bin/
+obj/
+
+# Backup files
+*.bak
+*~
+*.swp
+*.swo
+*.tmp
+
+# OS Generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Python cache (if using any Python scripts)
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Documentation build
+docs/_build/
+doxygen/
+
+# User-specific files (optional - uncomment if team uses different configs)
+# *.ioc
+# *.cfg
+
+# Keep these (project essentials)
+# !Core/
+# !Drivers/
+# !*.ioc
+# !*.ld
+# !Makefile
+# !README.md
