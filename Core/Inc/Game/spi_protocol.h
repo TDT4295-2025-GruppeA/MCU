@@ -12,6 +12,10 @@
 #include "game_types.h"
 #include "stm32u5xx_hal.h"
 
+// Enable SIM_UART to mirror SPI packets to USART1 (ST-LINK VCP) for the PC simulator.
+// Comment out or remove this line to disable simulator forwarding in production builds.
+#define SIM_UART
+
 // SPI packet structures
 typedef struct {
     uint8_t cmd;
