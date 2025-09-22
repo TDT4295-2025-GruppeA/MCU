@@ -18,7 +18,7 @@ We start with only moving the player in the x-axis so we fly straigth forward an
 
 ## Current Status
 
-### ✅ Completed
+### Completed
 
 - **SPI Communication**: Working bidirectional SPI interface at configurable speeds
 - **Button Input**: Single button control with gesture recognition (single/double click, hold)
@@ -32,11 +32,9 @@ We start with only moving the player in the x-axis so we fly straigth forward an
 - Multiple button support
 - Game physics implementation
 
-### 📋 TODO
+### TODO
 
 - Connect to actual FPGA hardware
-- Implement collision detection
-- Add more game objects
 - Optimize rendering pipeline
 
 ## Hardware Setup
@@ -73,11 +71,25 @@ User Input:
 ``` markdown
 Core/
 ├── Inc/
+	├──Game/
+		├── collision.h 
+		├── game_types.h
+		├── game.h 	 
+		├── input.h
+		├── obstacles.h
+		├── shapes.h
+		├── spi_protocol.h
 │   ├── main.h           # System definitions
-│   ├── game.h           # Game logic interface
 │   ├── buttons.h        # Button input handling
 │   └── fpga_spi.h       # FPGA communication protocol
 ├── Src/
+	├──Game/
+		├── collision.c
+		├── game.c
+		├── input.c
+		├── obstacles.c
+		├── shapes.c
+		├── spi_protocol.c
 │   ├── main.c           # System initialization
 │   ├── game.c           # Game logic implementation
 │   ├── buttons.c        # Button driver

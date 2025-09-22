@@ -15,7 +15,7 @@ extern void UART_Printf(const char* format, ...);
 // SPI handle pointer
 static SPI_HandleTypeDef* hspi = NULL;
 
-// SPI CS Pin (adjust based on your hardware)
+// SPI CS Pin
 #define SPI_CS_PORT GPIOA
 #define SPI_CS_PIN  GPIO_PIN_4
 

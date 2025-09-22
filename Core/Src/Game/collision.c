@@ -121,8 +121,6 @@ void Collision_ResolvePlayer(Position* player_pos, CollisionResult* result)
     else if(result->type == COLLISION_OBSTACLE && result->penetration_depth > 0)
     {
         // Simple resolution: stop forward movement or push back
-        // In a more complex system, you'd calculate the collision normal
-        // and push the player along it
         player_pos->z -= result->penetration_depth;
     }
 }
