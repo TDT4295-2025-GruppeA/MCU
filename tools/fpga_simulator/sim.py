@@ -1,12 +1,13 @@
 """
-Simple FPGA packet visualizer and local keyboard-based game visualizer.
+Simple FPGA simulator and local keyboard-based game visualizer.
 
 Usage:
   - Local (keyboard) mode: python sim.py
-  - Serial mode: python sim.py --serial COM3 --baud 115200
+  - Serial mode: python sim.py --serial [device] --baud 115200
 
 Requirements:
-  pip install vpython pyserial
+  * vpython 
+  * [pyserial]
 
 This script supports two modes:
  - Local mode: you can drive the player with arrow keys and space to toggle forward movement.
@@ -25,12 +26,7 @@ import struct
 import threading
 import time
 
-try:
-    from vpython import box, vector, color, rate, scene, label
-except Exception as e:
-    print("vpython import failed:", e)
-    print("Install with: pip install vpython")
-    raise
+from vpython import box, vector, color, rate, scene, label
 
 try:
     import serial
@@ -89,7 +85,6 @@ def serial_thread(port, baud):
                         player_pos['x'] = x
                         player_pos['y'] = y
                         player_pos['z'] = z
-                # other commands can be added here
         else:
             time.sleep(0.005)
 
@@ -104,7 +99,6 @@ def create_scene():
 
     player_obj = box(pos=vector(0, 0, 0), size=vector(4, 2, 2), color=color.cyan)
 
-    # add some placeholder obstacles
     for i in range(10):
         ob = box(pos=vector((i % 5) * 12 - 24, 0, i * 10 + 30), size=vector(6, 6, 6), color=color.red)
         obs_objs.append(ob)
@@ -119,11 +113,11 @@ def update_visuals():
         py = player_pos['y']
         pz = player_pos['z']
     player_obj.pos = vector(px / 1.0, py / 1.0, pz / 1.0)
-    # obstacles are static in this simple visualizer
+    # obstacles are static
     info_label.text = f"Player: x={px} y={py} z={pz}  Forward={'ON' if forward else 'OFF'}"
 
 
-# keyboard handlers (vpython)
+# keyboard handlers
 
 def keydown(evt):
     global forward
@@ -147,7 +141,7 @@ def keydown(evt):
 
 def main():
     parser = argparse.ArgumentParser(description='Simple FPGA visualizer / simulator')
-    parser.add_argument('--serial', help='Serial port (e.g. COM3) to listen for packets')
+    parser.add_argument('--serial', help='Serial port to listen for packets')
     parser.add_argument('--baud', type=int, default=115200, help='Serial baudrate')
     args = parser.parse_args()
 
@@ -161,13 +155,8 @@ def main():
     global forward
     while True:
         rate(60)
-        if not args.serial and forward:
-            with lock:
-                player_pos['z'] += speed_z * 10
-        # even in serial mode allow local forward toggle to move camera
-        if args.serial and forward:
-            with lock:
-                player_pos['z'] += speed_z * 10
+        with lock:
+            player_pos['z'] += speed_z * 10
         update_visuals()
 
 
