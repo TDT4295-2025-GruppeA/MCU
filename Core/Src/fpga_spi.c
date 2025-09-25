@@ -40,7 +40,7 @@ HAL_StatusTypeDef FPGA_SPI_Init(SPI_HandleTypeDef* hspi) {
     // - 8-bit data
     // - CPOL=0, CPHA=0 (Mode 0)
     // - MSB first
-    // - Speed: Start with 1-2 MHz, can increase later
+    // - Speed: Start with 1-2 MHz
 
     return HAL_OK;
 }

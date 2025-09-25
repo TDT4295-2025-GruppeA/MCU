@@ -29,7 +29,7 @@ static void SIM_UART_TransmitPacket(uint8_t* data, uint16_t size)
 // SPI handle pointer
 static SPI_HandleTypeDef* hspi = NULL;
 
-// SPI CS Pin (adjust based on your hardware)
+// SPI CS Pin
 #define SPI_CS_PORT GPIOA
 #define SPI_CS_PIN  GPIO_PIN_4
 
