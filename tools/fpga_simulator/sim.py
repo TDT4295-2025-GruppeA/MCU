@@ -155,8 +155,9 @@ def main():
     global forward
     while True:
         rate(60)
-        with lock:
-            player_pos['z'] += speed_z * 10
+        if forward:
+            with lock:
+                player_pos['z'] += speed_z * 10
         update_visuals()
 
 
