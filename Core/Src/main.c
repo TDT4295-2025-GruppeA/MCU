@@ -1,6 +1,6 @@
-// main.c - Simplified Main File
 #include "main.h"
 #include "./Game/game.h"
+#include "buttons.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -9,6 +9,8 @@
 SPI_HandleTypeDef hspi1;
 UART_HandleTypeDef huart1;
 COM_InitTypeDef BspCOMInit;
+ADC_HandleTypeDef hadc1;  // ADC1 for STM32U545RE
+ADC_ChannelConfTypeDef sConfig = {0};
 
 // UART receive buffer
 uint8_t uart_rx = 0;
@@ -19,8 +21,88 @@ static void SystemPower_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_ICACHE_Init(void);
 static void MX_SPI1_Init(void);
+static void MX_ADC1_Init(void);
 static void MX_USART1_UART_Init(void);
 void UART_Printf(const char* format, ...);
+uint32_t Read_ADC_Channel(uint32_t channel);
+
+// ADC Channel reading function
+uint32_t Read_ADC_Channel(uint32_t channel) {
+    ADC_ChannelConfTypeDef sConfig = {0};
+
+    sConfig.Channel = channel;
+    sConfig.Rank = ADC_REGULAR_RANK_1;
+    sConfig.SamplingTime = ADC_SAMPLETIME_68CYCLES;
+    sConfig.SingleDiff = ADC_SINGLE_ENDED;
+    sConfig.OffsetNumber = ADC_OFFSET_NONE;
+    sConfig.Offset = 0;
+
+    if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK) {
+        return 0;
+    }
+
+    if (HAL_ADC_Start(&hadc1) != HAL_OK) {
+        return 0;
+    }
+
+    if (HAL_ADC_PollForConversion(&hadc1, 100) != HAL_OK) {
+        return 0;
+    }
+
+    uint32_t value = HAL_ADC_GetValue(&hadc1);
+    HAL_ADC_Stop(&hadc1);
+
+    return value;
+}
+
+// Test function to verify ADC is working
+void Test_ADC_Pins(void) {
+    UART_Printf("\r\n=== Testing ADC1 on STM32U545RE ===\r\n");
+    UART_Printf("Nothing connected = should see ~2048 (floating)\r\n");
+    UART_Printf("With pull-up = should see ~4095\r\n");
+    UART_Printf("Button pressed to GND = should see ~0\r\n\r\n");
+
+    while(1) {
+        uint32_t pc0 = Read_ADC_Channel(ADC_CHANNEL_1);  // PC0
+        uint32_t pc1 = Read_ADC_Channel(ADC_CHANNEL_2);  // PC1
+
+        UART_Printf("PC0=%4lu  PC1=%4lu  ", pc0, pc1);
+
+        // Interpret the values
+        if (pc0 < 500) UART_Printf("[PC0 LOW/PRESSED]  ");
+        else if (pc0 > 3500) UART_Printf("[PC0 HIGH]  ");
+        else UART_Printf("[PC0 FLOATING]  ");
+
+        if (pc1 < 500) UART_Printf("[PC1 LOW/PRESSED]");
+        else if (pc1 > 3500) UART_Printf("[PC1 HIGH]");
+        else UART_Printf("[PC1 FLOATING]");
+
+        UART_Printf("\r\n");
+        HAL_Delay(500);
+    }
+}
+
+void Test_With_Hardware(void) {
+    UART_Printf("Press buttons to test!\r\n");
+
+    while(1) {
+        uint32_t pc0 = Read_ADC_Channel(ADC_CHANNEL_1);
+        uint32_t pc1 = Read_ADC_Channel(ADC_CHANNEL_2);
+
+        if (pc0 < 100) {
+            UART_Printf("BUTTON 1 PRESSED! ");
+        }
+        if (pc1 < 100) {
+            UART_Printf("BUTTON 2 PRESSED! ");
+        }
+        if (pc0 > 3000 && pc1 > 3000) {
+            UART_Printf("Both released (pull-ups working)");
+        }
+
+        UART_Printf(" [PC0=%4lu PC1=%4lu]\r\n", pc0, pc1);
+        HAL_Delay(200);
+    }
+}
 
 // ============================================
 // MAIN
@@ -36,11 +118,11 @@ int main(void)
     MX_GPIO_Init();
     MX_ICACHE_Init();
     MX_SPI1_Init();
+    MX_ADC1_Init();  // Initialize ADC1
     MX_USART1_UART_Init();
 
     // BSP initialization
     BSP_LED_Init(LED_GREEN);
-    BSP_PB_Init(BUTTON_USER, BUTTON_MODE_GPIO);
 
     // Configure COM port
     BspCOMInit.BaudRate   = 115200;
@@ -53,22 +135,19 @@ int main(void)
     // Start UART interrupt
     HAL_UART_Receive_IT(&huart1, &uart_rx, 1);
 
-    // Initialize game
+    // Run ADC test
+    UART_Printf("\r\nSTM32U545RE ADC Test Starting...\r\n");
+    //Test_ADC_Pins();  // This runs forever for testing
+
+    // Normal game code
     Game_Init();
 
     // Main loop
     while (1)
     {
         uint32_t now = HAL_GetTick();
-
-        // Handle button input
-        uint8_t button_state = BSP_PB_GetState(BUTTON_USER);
-        Game_HandleButton(button_state, now);
-
-        // Update game
         Game_Update(now);
-
-        HAL_Delay(20);  // 50Hz polling
+        HAL_Delay(20);
     }
 }
 
@@ -95,9 +174,52 @@ void UART_Printf(const char* format, ...)
 }
 
 // ============================================
-// INITIALIZATION FUNCTIONS
+// ADC1 INITIALIZATION FOR STM32U545RE
 // ============================================
+static void MX_ADC1_Init(void)
+{
+    ADC_ChannelConfTypeDef sConfig = {0};
 
+    // Enable ADC peripheral clock
+    __HAL_RCC_ADC12_CLK_ENABLE();
+
+    // Configure ADC1
+    hadc1.Instance = ADC1;
+    hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV4;
+    hadc1.Init.Resolution = ADC_RESOLUTION_12B;
+    hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+    hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;
+    hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+    hadc1.Init.LowPowerAutoWait = DISABLE;
+    hadc1.Init.ContinuousConvMode = DISABLE;
+    hadc1.Init.NbrOfConversion = 1;
+    hadc1.Init.DiscontinuousConvMode = DISABLE;
+    hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
+    hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+    hadc1.Init.DMAContinuousRequests = DISABLE;
+    hadc1.Init.TriggerFrequencyMode = ADC_TRIGGER_FREQ_LOW;
+    hadc1.Init.Overrun = ADC_OVR_DATA_PRESERVED;
+    hadc1.Init.LeftBitShift = ADC_LEFTBITSHIFT_NONE;
+    hadc1.Init.ConversionDataManagement = ADC_CONVERSIONDATA_DR;
+    hadc1.Init.OversamplingMode = DISABLE;
+
+    if (HAL_ADC_Init(&hadc1) != HAL_OK)
+    {
+        Error_Handler();
+    }
+
+    // Run calibration
+    if (HAL_ADCEx_Calibration_Start(&hadc1, ADC_CALIB_OFFSET, ADC_SINGLE_ENDED) != HAL_OK)
+    {
+        Error_Handler();
+    }
+
+    UART_Printf("ADC1 initialized and calibrated\r\n");
+}
+
+// ============================================
+// OTHER INITIALIZATION FUNCTIONS
+// ============================================
 static void MX_USART1_UART_Init(void)
 {
     huart1.Instance = USART1;
@@ -110,6 +232,7 @@ static void MX_USART1_UART_Init(void)
     huart1.Init.OverSampling = UART_OVERSAMPLING_16;
     huart1.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
     huart1.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+
     if (HAL_UART_Init(&huart1) != HAL_OK)
     {
         Error_Handler();
@@ -131,6 +254,7 @@ void SystemClock_Config(void)
     RCC_OscInitStruct.MSICalibrationValue = RCC_MSICALIBRATION_DEFAULT;
     RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_4;
     RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
+
     if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
     {
         Error_Handler();
@@ -211,24 +335,29 @@ static void MX_SPI1_Init(void)
     {
         Error_Handler();
     }
+}
 
-    // Configure CS pin (PA4)
+static void MX_GPIO_Init(void)
+{
     GPIO_InitTypeDef GPIO_InitStruct = {0};
-    __HAL_RCC_GPIOA_CLK_ENABLE();
 
+    // Enable GPIO Clocks
+    __HAL_RCC_GPIOA_CLK_ENABLE();
+    __HAL_RCC_GPIOC_CLK_ENABLE();
+
+    // Configure SPI1 CS pin (PA4)
     GPIO_InitStruct.Pin = GPIO_PIN_4;
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-    // CS high (inactive)
     HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
-}
 
-static void MX_GPIO_Init(void)
-{
-    __HAL_RCC_GPIOA_CLK_ENABLE();
+    // Configure PC0 and PC1 as analog inputs for ADC
+    GPIO_InitStruct.Pin = GPIO_PIN_0 | GPIO_PIN_1;
+    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 }
 
 void Error_Handler(void)

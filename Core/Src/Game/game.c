@@ -1,18 +1,10 @@
-/*
- * game.c
- *
- *  Created on: Sep 12, 2025
- *      Author: jornik
- */
-
-
-// game.c - Main game controller implementation
 #include "./Game/game.h"
 #include "./Game/shapes.h"
 #include "./Game/obstacles.h"
 #include "./Game/collision.h"
 #include "./Game/spi_protocol.h"
 #include "./Game/input.h"
+#include "buttons.h"
 #include "main.h"
 #include <string.h>
 
@@ -25,6 +17,8 @@ extern void UART_Printf(const char* format, ...);
 static GameState game_state;
 static uint32_t last_update_time = 0;
 static uint32_t score_multiplier = 1;
+static ADCButtonState adc_buttons;
+
 
 // Initialize game
 void Game_Init(void)
@@ -37,6 +31,7 @@ void Game_Init(void)
     // Initialize subsystems
     SPI_Protocol_Init(&hspi1);
     Input_Init();
+    Buttons_Init();
     Shapes_Init();
     Obstacles_Init();
 
@@ -152,11 +147,61 @@ void Game_Update(uint32_t current_time)
         return;
     }
 
+    // UPDATE ADC BUTTONS
+    Buttons_Update(&adc_buttons);
+
+    // Handle button input based on game state
+    if(game_state.state == GAME_STATE_PLAYING)
+    {
+        // Left button pressed
+        if(adc_buttons.left_pressed)
+        {
+            game_state.player_pos.x -= STRAFE_SPEED;
+            if(game_state.player_pos.x < WORLD_MIN_X) {
+                game_state.player_pos.x = WORLD_MIN_X;
+            }
+            UART_Printf("LEFT -> X=%d\r\n", (int)game_state.player_pos.x);
+        }
+
+        // Right button pressed
+        if(adc_buttons.right_pressed)
+        {
+            game_state.player_pos.x += STRAFE_SPEED;
+            if(game_state.player_pos.x > WORLD_MAX_X) {
+                game_state.player_pos.x = WORLD_MAX_X;
+            }
+            UART_Printf("RIGHT -> X=%d\r\n", (int)game_state.player_pos.x);
+        }
+
+        // Long press left = reset
+        if(adc_buttons.left_long_press)
+        {
+            Game_Start();
+            UART_Printf("RESET (long press)\r\n");
+        }
+    }
+    else if(game_state.state == GAME_STATE_PAUSED)
+    {
+        // Both buttons to resume
+        if(adc_buttons.both_pressed)
+        {
+            Game_Resume();
+        }
+    }
+    else if(game_state.state == GAME_STATE_GAME_OVER || game_state.state == GAME_STATE_MENU)
+    {
+        // Any button to start
+        if(adc_buttons.left_pressed || adc_buttons.right_pressed)
+        {
+            Game_Start();
+        }
+    }
+
     float delta_time = (current_time - last_update_time) / 1000.0f;
     last_update_time = current_time;
     game_state.frame_count++;
 
-    // Only update if playing
+    // Only update game logic if playing
     if(game_state.state != GAME_STATE_PLAYING)
     {
         return;
@@ -179,17 +224,7 @@ void Game_Update(uint32_t current_time)
     Obstacle* obstacles = Obstacles_GetArray();
     CollisionResult collision = Collision_CheckPlayer(&game_state.player_pos, obstacles, MAX_OBSTACLES);
 
-    if(collision.type == COLLISION_OBSTACLE)
-    {
-        Game_Over();
-        return;
-    }
-    else if(collision.type == COLLISION_BOUNDARY)
-    {
-        Collision_ResolvePlayer(&game_state.player_pos, &collision);
-    }
-
-    // Update score based on distance and obstacles passed
+    // Update score
     uint32_t obstacles_passed = Obstacles_CheckPassed(game_state.player_pos.z);
     game_state.score = (uint32_t)(game_state.player_pos.z) + (obstacles_passed * 10 * score_multiplier);
 
@@ -207,7 +242,7 @@ void Game_Update(uint32_t current_time)
     // Send updates to FPGA
     SPI_SendPosition(&game_state.player_pos);
 
-    // Send visible obstacles (relative positions)
+    // Send visible obstacles
     uint8_t visible_count = 0;
     Obstacle relative_obstacles[MAX_OBSTACLES];
 
@@ -230,7 +265,6 @@ void Game_Update(uint32_t current_time)
         SPI_SendObstacles(relative_obstacles, visible_count);
     }
 }
-
 // Handle button input
 void Game_HandleButton(uint8_t button_state, uint32_t current_time)
 {
