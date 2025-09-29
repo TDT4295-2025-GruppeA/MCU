@@ -13,6 +13,20 @@
 // External UART for debugging
 extern void UART_Printf(const char* format, ...);
 
+// Optional: forward raw SPI packets to the PC over USART (ST-LINK VCP) for simulator
+#ifdef SIM_UART
+#include "main.h"
+extern UART_HandleTypeDef huart1;
+static void SIM_UART_TransmitPacket(uint8_t* data, uint16_t size)
+{
+    // Best-effort blocking transmit to VCP so the PC simulator receives identical bytes
+    if (huart1.Instance != NULL)
+    {
+        HAL_UART_Transmit(&huart1, data, size, 100);
+    }
+}
+#endif
+
 // SPI handle pointer
 static SPI_HandleTypeDef* hspi = NULL;
 
@@ -39,6 +53,11 @@ void SPI_TransmitPacket(uint8_t* data, uint16_t size)
 
     // Pull CS high
     HAL_GPIO_WritePin(SPI_CS_PORT, SPI_CS_PIN, GPIO_PIN_SET);
+
+    // Mirror the same bytes to the PC over UART when building for simulator
+    #ifdef SIM_UART
+    SIM_UART_TransmitPacket(data, size);
+    #endif
 }
 
 // Send player position
