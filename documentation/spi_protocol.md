@@ -44,7 +44,6 @@ All messages are composed of a command byte followed by zero or more data bytes.
 
 ### Field Definitions
 
-
 - **Color:** 2 bytes (format: 5 bits R, 5 bits G, 5 bits B, 1 bit reserved)
 - **Vertex (V0, V1, V2):** 4 bytes each (signed 32-bit fixed-point, Q16.16 format)
 - **Model ID:** 1 byte

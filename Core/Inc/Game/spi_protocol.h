@@ -16,31 +16,17 @@
 // Comment out or remove this line to disable simulator forwarding in production builds.
 #define SIM_UART
 
-// SPI packet structures
-typedef struct {
-    uint8_t cmd;
-    int16_t x;
-    int16_t y;
-    int16_t z;
-} __attribute__((packed)) PositionPacket;
-
-typedef struct {
-    uint8_t cmd;
-    uint8_t event_type;
-} __attribute__((packed)) EventPacket;
 
 // Initialize SPI protocol handler
 void SPI_Protocol_Init(SPI_HandleTypeDef* spi_handle);
-
-// Send functions
-void SPI_SendPosition(Position* pos);
-void SPI_SendShape(Shape3D* shape);
-void SPI_SendObstacles(Obstacle* obstacles, uint8_t count);
-void SPI_SendCollisionEvent(void);
-void SPI_SendGameState(GameStateEnum state, uint32_t score);
-void SPI_ClearScene(void);
-
-// Low-level SPI functions
 void SPI_TransmitPacket(uint8_t* data, uint16_t size);
+
+// Protocol commands (see documentation/spi_protocol.md)
+void SPI_SendReset(void);
+uint8_t SPI_BeginUpload(void);
+void SPI_UploadTriangle(uint16_t color, float v0[3], float v1[3], float v2[3]);
+void SPI_AddModelInstance(uint8_t model_id, float pos[3], float rot[9]);
+void SPI_MarkFrameStart(void);
+void SPI_MarkFrameEnd(void);
 
 #endif // SPI_PROTOCOL_H

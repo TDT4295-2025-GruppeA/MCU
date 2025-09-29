@@ -17,9 +17,10 @@ extern void UART_Printf(const char* format, ...);
 #ifdef SIM_UART
 #include "main.h"
 extern UART_HandleTypeDef huart1;
-static void SIM_UART_TransmitPacket(uint8_t* data, uint16_t size)
+// Mirrors SPI packets to UART (e.g., ST-LINK VCP) for use by the simulator or other external tools.
+// This is required for the PC simulator to receive identical bytes as the FPGA, but can be used for any interface needing SPI traffic.
+static void SPI_MirrorPacketToUART(uint8_t* data, uint16_t size)
 {
-    // Best-effort blocking transmit to VCP so the PC simulator receives identical bytes
     if (huart1.Instance != NULL)
     {
         HAL_UART_Transmit(&huart1, data, size, 100);
@@ -40,160 +41,132 @@ void SPI_Protocol_Init(SPI_HandleTypeDef* spi_handle)
     hspi = spi_handle;
 }
 
-// Low-level packet transmission
+
 void SPI_TransmitPacket(uint8_t* data, uint16_t size)
 {
-    if(hspi == NULL) return;
-
-    // Pull CS low
-    HAL_GPIO_WritePin(SPI_CS_PORT, SPI_CS_PIN, GPIO_PIN_RESET);
-
-    // Transmit data
-    HAL_SPI_Transmit(hspi, data, size, 100);
-
-    // Pull CS high
-    HAL_GPIO_WritePin(SPI_CS_PORT, SPI_CS_PIN, GPIO_PIN_SET);
-
-    // Mirror the same bytes to the PC over UART when building for simulator
+    if(hspi != NULL) {
+        // Pull CS low
+        HAL_GPIO_WritePin(SPI_CS_PORT, SPI_CS_PIN, GPIO_PIN_RESET);
+        // Transmit data
+        HAL_SPI_Transmit(hspi, data, size, 100);
+        // Pull CS high
+        HAL_GPIO_WritePin(SPI_CS_PORT, SPI_CS_PIN, GPIO_PIN_SET);
+    }
     #ifdef SIM_UART
-    SIM_UART_TransmitPacket(data, size);
+    // Mirror the same bytes to UART for simulator or other external interfaces
+    SPI_MirrorPacketToUART(data, size);
     #endif
 }
 
-// Send player position
-void SPI_SendPosition(Position* pos)
-{
-    PositionPacket packet;
-    packet.cmd = CMD_POSITION;
-    packet.x = (int16_t)pos->x;
-    packet.y = (int16_t)pos->y;
-    packet.z = (int16_t)pos->z;
-
-    SPI_TransmitPacket((uint8_t*)&packet, sizeof(packet));
-
-    #ifdef DEBUG_SPI
-    UART_Printf("SPI: Position [%d,%d,%d]\r\n", packet.x, packet.y, packet.z);
-    #endif
+// --- Helpers ---
+static int32_t to_q16_16(float v) { return (int32_t)(v * 65536.0f); }
+static void pack_be32(uint8_t *buf, int32_t val) {
+    buf[0] = (uint8_t)((val >> 24) & 0xFF);
+    buf[1] = (uint8_t)((val >> 16) & 0xFF);
+    buf[2] = (uint8_t)((val >> 8) & 0xFF);
+    buf[3] = (uint8_t)(val & 0xFF);
+}
+static void pack_be16(uint8_t *buf, uint16_t val) {
+    buf[0] = (uint8_t)((val >> 8) & 0xFF);
+    buf[1] = (uint8_t)(val & 0xFF);
 }
 
-// Send shape definition to FPGA
-void SPI_SendShape(Shape3D* shape)
+// --- Protocol commands ---
+// Reset (0x00)
+void SPI_SendReset(void)
 {
-    uint8_t packet[512];  // Large buffer for shape data
-    uint16_t idx = 0;
+    uint8_t cmd = 0x00;
+    SPI_TransmitPacket(&cmd, 1);
+}
 
-    // Header
-    packet[idx++] = CMD_SHAPE_DEF;
-    packet[idx++] = shape->id;
-    packet[idx++] = shape->vertex_count;
-    packet[idx++] = shape->triangle_count;
+// Begin upload (0xA0) -> FPGA may respond with 1-byte object ID during/after transaction
+// This function attempts to read a single byte response if the SPI backend is available.
+// Returns 0 if no response is available or on timeout.
+uint8_t SPI_BeginUpload(void)
+{
+    uint8_t cmd = 0xA0;
+    uint8_t resp = 0;
 
-    // Pack vertices (little-endian)
-    for(int i = 0; i < shape->vertex_count; i++)
-    {
-        packet[idx++] = shape->vertices[i].x & 0xFF;
-        packet[idx++] = (shape->vertices[i].x >> 8) & 0xFF;
-        packet[idx++] = shape->vertices[i].y & 0xFF;
-        packet[idx++] = (shape->vertices[i].y >> 8) & 0xFF;
-        packet[idx++] = shape->vertices[i].z & 0xFF;
-        packet[idx++] = (shape->vertices[i].z >> 8) & 0xFF;
+    if(hspi == NULL) {
+        #ifdef SIM_UART
+        SIM_UART_TransmitPacket(&cmd, 1);
+        #endif
+        return 0;
     }
 
-    // Pack triangles
-    for(int i = 0; i < shape->triangle_count; i++)
-    {
-        packet[idx++] = shape->triangles[i].v1;
-        packet[idx++] = shape->triangles[i].v2;
-        packet[idx++] = shape->triangles[i].v3;
+    HAL_GPIO_WritePin(SPI_CS_PORT, SPI_CS_PIN, GPIO_PIN_RESET);
+    HAL_SPI_Transmit(hspi, &cmd, 1, 100);
+    // Try to receive 1 byte response (non-blocking with timeout)
+    if(HAL_SPI_Receive(hspi, &resp, 1, 50) != HAL_OK) {
+        resp = 0;
+    }
+    HAL_GPIO_WritePin(SPI_CS_PORT, SPI_CS_PIN, GPIO_PIN_SET);
+
+    #ifdef SIM_UART
+    SPI_MirrorPacketToUART(&cmd, 1);
+    if(resp != 0) {
+        SPI_MirrorPacketToUART(&resp, 1);
+    }
+    #endif
+
+    return resp;
+}
+
+// Upload triangle (0xA1): Color (2 bytes), V0 (3x Q16.16), V1 (3x Q16.16), V2 (3x Q16.16)
+void SPI_UploadTriangle(uint16_t color, float v0[3], float v1[3], float v2[3])
+{
+    uint8_t packet[1 + 2 + 12 + 12 + 12]; // 1 + color + 3*4*3
+    uint16_t idx = 0;
+    packet[idx++] = 0xA1;
+    pack_be16(&packet[idx], color); idx += 2;
+
+    int32_t tmp;
+    tmp = to_q16_16(v0[0]); pack_be32(&packet[idx], tmp); idx += 4;
+    tmp = to_q16_16(v0[1]); pack_be32(&packet[idx], tmp); idx += 4;
+    tmp = to_q16_16(v0[2]); pack_be32(&packet[idx], tmp); idx += 4;
+
+    tmp = to_q16_16(v1[0]); pack_be32(&packet[idx], tmp); idx += 4;
+    tmp = to_q16_16(v1[1]); pack_be32(&packet[idx], tmp); idx += 4;
+    tmp = to_q16_16(v1[2]); pack_be32(&packet[idx], tmp); idx += 4;
+
+    tmp = to_q16_16(v2[0]); pack_be32(&packet[idx], tmp); idx += 4;
+    tmp = to_q16_16(v2[1]); pack_be32(&packet[idx], tmp); idx += 4;
+    tmp = to_q16_16(v2[2]); pack_be32(&packet[idx], tmp); idx += 4;
+
+    SPI_TransmitPacket(packet, idx);
+}
+
+// Add model instance (0xB0): Reserved(1), Model ID(1), Position X/Y/Z (Q16.16), Rotation 3x3 (Q16.16)
+void SPI_AddModelInstance(uint8_t model_id, float pos[3], float rot[9])
+{
+    uint8_t packet[44];
+    uint16_t idx = 0;
+    packet[idx++] = 0xB0;
+    packet[idx++] = 0x00; // reserved
+    packet[idx++] = model_id;
+
+    pack_be32(&packet[idx], to_q16_16(pos[0])); idx += 4;
+    pack_be32(&packet[idx], to_q16_16(pos[1])); idx += 4;
+    pack_be32(&packet[idx], to_q16_16(pos[2])); idx += 4;
+
+    for(int i = 0; i < 9; ++i) {
+        pack_be32(&packet[idx], to_q16_16(rot[i])); idx += 4;
     }
 
     SPI_TransmitPacket(packet, idx);
-
-    UART_Printf("SPI: Shape %d sent (%d bytes, %d verts, %d tris)\r\n",
-               shape->id, idx, shape->vertex_count, shape->triangle_count);
 }
 
-// Send obstacle positions
-void SPI_SendObstacles(Obstacle* obstacles, uint8_t count)
+// Mark frame start (0xF0)
+void SPI_MarkFrameStart(void)
 {
-    uint8_t packet[256];
-    uint16_t idx = 0;
-
-    packet[idx++] = CMD_OBSTACLE_POS;
-    packet[idx++] = 0;  // Count placeholder
-
-    uint8_t sent_count = 0;
-
-    for(int i = 0; i < count && sent_count < 15; i++)
-    {
-        if(obstacles[i].active)
-        {
-            packet[idx++] = obstacles[i].shape_id;
-
-            // Position as int16
-            int16_t x = (int16_t)obstacles[i].pos.x;
-            int16_t y = (int16_t)obstacles[i].pos.y;
-            int16_t z = (int16_t)obstacles[i].pos.z;
-
-            // Pack position (little-endian)
-            packet[idx++] = x & 0xFF;
-            packet[idx++] = (x >> 8) & 0xFF;
-            packet[idx++] = y & 0xFF;
-            packet[idx++] = (y >> 8) & 0xFF;
-            packet[idx++] = z & 0xFF;
-            packet[idx++] = (z >> 8) & 0xFF;
-
-            sent_count++;
-        }
-    }
-
-    packet[1] = sent_count;  // Update count
-
-    if(sent_count > 0)
-    {
-        SPI_TransmitPacket(packet, idx);
-
-        #ifdef DEBUG_SPI
-        UART_Printf("SPI: Sent %d obstacles\r\n", sent_count);
-        #endif
-    }
+    uint8_t cmd = 0xF0;
+    SPI_TransmitPacket(&cmd, 1);
 }
 
-// Send collision event
-void SPI_SendCollisionEvent(void)
+// Mark frame end (0xF1)
+void SPI_MarkFrameEnd(void)
 {
-    EventPacket packet;
-    packet.cmd = CMD_COLLISION;
-    packet.event_type = 0x01;  // Collision occurred
-
-    SPI_TransmitPacket((uint8_t*)&packet, sizeof(packet));
-
-    UART_Printf("SPI: Collision event sent\r\n");
+    uint8_t cmd = 0xF1;
+    SPI_TransmitPacket(&cmd, 1);
 }
 
-// Send game state update
-void SPI_SendGameState(GameStateEnum state, uint32_t score)
-{
-    uint8_t packet[8];
-    packet[0] = CMD_GAME_STATE;
-    packet[1] = (uint8_t)state;
-
-    // Pack score (little-endian)
-    packet[2] = score & 0xFF;
-    packet[3] = (score >> 8) & 0xFF;
-    packet[4] = (score >> 16) & 0xFF;
-    packet[5] = (score >> 24) & 0xFF;
-
-    SPI_TransmitPacket(packet, 6);
-
-    UART_Printf("SPI: Game state=%d, score=%lu\r\n", state, score);
-}
-
-// Clear scene command
-void SPI_ClearScene(void)
-{
-    uint8_t packet[2] = {CMD_CLEAR_SCENE, 0x00};
-    SPI_TransmitPacket(packet, 2);
-
-    UART_Printf("SPI: Clear scene sent\r\n");
-}
