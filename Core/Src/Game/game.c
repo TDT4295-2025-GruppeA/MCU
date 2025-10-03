@@ -1,18 +1,10 @@
-/*
- * game.c
- *
- *  Created on: Sep 12, 2025
- *      Author: jornik
- */
-
-
-// game.c - Main game controller implementation
 #include "./Game/game.h"
 #include "./Game/shapes.h"
 #include "./Game/obstacles.h"
 #include "./Game/collision.h"
 #include "./Game/spi_protocol.h"
 #include "./Game/input.h"
+#include "buttons.h"
 #include "main.h"
 #include <string.h>
 
@@ -25,26 +17,35 @@ extern void UART_Printf(const char* format, ...);
 static GameState game_state;
 static uint32_t last_update_time = 0;
 static uint32_t score_multiplier = 1;
+static ADCButtonState adc_buttons;
+static void Handle_Input(void);
+static void Move_Player(float delta_x);
+static void Update_GameLogic(float delta_time);
+static void Check_Collisions(void);
+static void Update_Score(void);
+static void Render_Frame(void);
+
 
 // Initialize game
 void Game_Init(void)
 {
     UART_Printf("\r\n=================================\r\n");
-    UART_Printf("3D TUNNEL RUNNER - MODULAR EDITION\r\n");
+    UART_Printf("Flyboy 3D \r\n");
     UART_Printf("=================================\r\n");
     UART_Printf("Initializing subsystems...\r\n");
 
     // Initialize subsystems
     SPI_Protocol_Init(&hspi1);
+
     Input_Init();
+    Buttons_Init();
     Shapes_Init();
     Obstacles_Init();
-
     // Send shapes to FPGA
     UART_Printf("Sending shapes to FPGA...\r\n");
-    SPI_SendShape(Shapes_GetPlayer());
-    SPI_SendShape(Shapes_GetCube());
-    SPI_SendShape(Shapes_GetCone());
+    SPI_SendShapeToFPGA(Shapes_GetPlayer());
+    SPI_SendShapeToFPGA(Shapes_GetCube());
+    SPI_SendShapeToFPGA(Shapes_GetCone());
 
     // Initialize game state
     Game_Reset();
@@ -143,12 +144,10 @@ void Game_Over(void)
     UART_Printf("Press R to restart\r\n\r\n");
 }
 
-// Main update loop
 void Game_Update(uint32_t current_time)
 {
     // Check update interval
-    if(current_time - last_update_time < UPDATE_INTERVAL)
-    {
+    if(current_time - last_update_time < UPDATE_INTERVAL) {
         return;
     }
 
@@ -156,79 +155,121 @@ void Game_Update(uint32_t current_time)
     last_update_time = current_time;
     game_state.frame_count++;
 
-    // Only update if playing
-    if(game_state.state != GAME_STATE_PLAYING)
-    {
-        return;
+    // 1. INPUT HANDLING
+    Handle_Input();
+
+    // 2. GAME LOGIC (only if playing)
+    if(game_state.state == GAME_STATE_PLAYING) {
+        Update_GameLogic(delta_time);
+        Check_Collisions();
+        Update_Score();
+
+        // 3. RENDERING TO FPGA
+        Render_Frame();
+    }
+}
+
+static void Handle_Input(void)
+{
+    Buttons_Update(&adc_buttons);
+
+    switch(game_state.state) {
+        case GAME_STATE_PLAYING:
+            if(adc_buttons.left_pressed) {
+                Move_Player(-STRAFE_SPEED);
+            }
+            if(adc_buttons.right_pressed) {
+                Move_Player(STRAFE_SPEED);
+            }
+            if(adc_buttons.left_long_press) {
+                Game_Start();
+                UART_Printf("RESET (long press)\r\n");
+            }
+            break;
+
+        case GAME_STATE_PAUSED:
+            if(adc_buttons.both_pressed) {
+                Game_Resume();
+            }
+            break;
+
+        case GAME_STATE_MENU:
+        case GAME_STATE_GAME_OVER:
+            if(adc_buttons.left_pressed || adc_buttons.right_pressed) {
+                Game_Start();
+            }
+            break;
+    }
+}
+
+static void Move_Player(float delta_x)
+{
+    game_state.player_pos.x += delta_x;
+
+    // Clamp to world bounds
+    if(game_state.player_pos.x < WORLD_MIN_X) {
+        game_state.player_pos.x = WORLD_MIN_X;
+    } else if(game_state.player_pos.x > WORLD_MAX_X) {
+        game_state.player_pos.x = WORLD_MAX_X;
     }
 
-    // Move forward if enabled
-    if(game_state.moving_forward)
-    {
+    UART_Printf("Player X=%d\r\n", (int)game_state.player_pos.x);
+}
+
+static void Update_GameLogic(float delta_time)
+{
+    // Move forward
+    if(game_state.moving_forward) {
         game_state.player_pos.z += FORWARD_SPEED * delta_time;
     }
 
-    // Keep player in bounds
-    if(game_state.player_pos.x < WORLD_MIN_X) game_state.player_pos.x = WORLD_MIN_X;
-    if(game_state.player_pos.x > WORLD_MAX_X) game_state.player_pos.x = WORLD_MAX_X;
-
     // Update obstacles
     Obstacles_Update(game_state.player_pos.z, delta_time);
+}
 
-    // Check collisions
+static void Check_Collisions(void)
+{
     Obstacle* obstacles = Obstacles_GetArray();
     CollisionResult collision = Collision_CheckPlayer(&game_state.player_pos, obstacles, MAX_OBSTACLES);
 
-    if(collision.type == COLLISION_OBSTACLE)
-    {
+    if(collision.type != COLLISION_NONE) {
         Game_Over();
-        return;
     }
-    else if(collision.type == COLLISION_BOUNDARY)
-    {
-        Collision_ResolvePlayer(&game_state.player_pos, &collision);
-    }
+}
 
-    // Update score based on distance and obstacles passed
+static void Update_Score(void)
+{
     uint32_t obstacles_passed = Obstacles_CheckPassed(game_state.player_pos.z);
     game_state.score = (uint32_t)(game_state.player_pos.z) + (obstacles_passed * 10 * score_multiplier);
+}
 
-    // Print status periodically
-    if(game_state.frame_count % 10 == 0)
-    {
-        UART_Printf("[%lu] Pos: X=%d Z=%d | Score: %lu | Obstacles: %d active\r\n",
-                   game_state.frame_count,
-                   (int)game_state.player_pos.x,
-                   (int)game_state.player_pos.z,
-                   game_state.score,
-                   Obstacles_GetActiveCount());
-    }
+static void Render_Frame(void)
+{
+    // Clear previous frame instances
+    // SPI_ClearScene();
+    // 1. Send player as model instance
+    SPI_AddModelInstance(SHAPE_ID_PLAYER, &game_state.player_pos, NULL);  // NULL = no rotation
 
-    // Send updates to FPGA
-    SPI_SendPosition(&game_state.player_pos);
+    // 2. Send visible obstacles as model instances
+    Obstacle* obstacles = Obstacles_GetArray();
+    int instances_sent = 0;
 
-    // Send visible obstacles (relative positions)
-    uint8_t visible_count = 0;
-    Obstacle relative_obstacles[MAX_OBSTACLES];
+    for(int i = 0; i < MAX_OBSTACLES && instances_sent < 15; i++) {  // FPGA limit
+        if(obstacles[i].active) {
+            // Calculate relative position (camera-space)
+            Position relative_pos = obstacles[i].pos;
+            relative_pos.z -= game_state.player_pos.z;
 
-    for(int i = 0; i < MAX_OBSTACLES; i++)
-    {
-        if(obstacles[i].active)
-        {
-            float rel_z = obstacles[i].pos.z - game_state.player_pos.z;
-            if(rel_z > -20 && rel_z < 150)
-            {
-                relative_obstacles[visible_count] = obstacles[i];
-                relative_obstacles[visible_count].pos.z = rel_z;
-                visible_count++;
+            // Only send if visible
+            if(relative_pos.z > -20 && relative_pos.z < 150) {
+                SPI_AddModelInstance(obstacles[i].shape_id, &relative_pos, NULL);
+                instances_sent++;
             }
         }
     }
 
-    if(visible_count > 0)
-    {
-        SPI_SendObstacles(relative_obstacles, visible_count);
-    }
+    // 3. Tell FPGA to render the frame
+    SPI_BeginRender();
 }
 
 // Handle button input
@@ -263,44 +304,6 @@ void Game_HandleButton(uint8_t button_state, uint32_t current_time)
             {
                 Game_Resume();
             }
-            break;
-
-        default:
-            break;
-    }
-}
-
-// Handle keyboard input
-void Game_HandleKeyboard(uint8_t key)
-{
-    InputAction action = Input_ProcessKeyboard(key);
-
-    switch(action)
-    {
-        case ACTION_MOVE_LEFT:
-            if(game_state.state == GAME_STATE_PLAYING)
-            {
-                game_state.player_pos.x -= STRAFE_SPEED;
-            }
-            break;
-
-        case ACTION_MOVE_RIGHT:
-            if(game_state.state == GAME_STATE_PLAYING)
-            {
-                game_state.player_pos.x += STRAFE_SPEED;
-            }
-            break;
-
-        case ACTION_PAUSE:
-            Game_Pause();
-            break;
-
-        case ACTION_RESUME:
-            Game_Resume();
-            break;
-
-        case ACTION_RESET:
-            Game_Start();
             break;
 
         default:

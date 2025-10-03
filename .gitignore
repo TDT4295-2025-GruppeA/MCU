@@ -13,11 +13,7 @@ Release/
 *.cyclo
 
 # IDE - STM32CubeIDE specific
-.settings/
 .metadata/
-.cproject
-.project
-.mxproject
 *.launch
 RemoteSystemsTempFiles/
 
@@ -70,8 +66,6 @@ doxygen/
 # !Makefile
 # !README.md
 # IDE Settings and metadata
-.settings/
-.mxproject
 
 # Optional - uncomment if you generate these from .ioc
 # *.ld

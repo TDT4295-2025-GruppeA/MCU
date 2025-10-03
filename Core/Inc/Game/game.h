@@ -21,7 +21,6 @@ void Game_Update(uint32_t current_time);
 
 // Handle external inputs
 void Game_HandleButton(uint8_t button_state, uint32_t current_time);
-void Game_HandleKeyboard(uint8_t key);
 
 // Game state management
 void Game_Start(void);

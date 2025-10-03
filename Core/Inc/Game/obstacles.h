@@ -1,10 +1,3 @@
-/*
- * obstacles.h
- *
- *  Created on: Sep 15, 2025
- *      Author: jornik
- */
-
 // obstacles.h - Obstacle spawning and management
 #ifndef OBSTACLES_H
 #define OBSTACLES_H
@@ -19,6 +12,7 @@ void Obstacles_Update(float player_z, float delta_time);
 void Obstacles_Spawn(float z_position);
 void Obstacles_Clear(void);
 void Obstacles_Reset(void);
+void Obstacles_SetAutoSpawn(uint8_t enabled);
 
 // Getters
 Obstacle* Obstacles_GetArray(void);

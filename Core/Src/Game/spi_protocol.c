@@ -1,10 +1,3 @@
-/*
- * spi_protocol.c
- *
- *  Created on: Sep 15, 2025
- *      Author: jornik
- */
-
 // spi_protocol.c - SPI communication implementation
 #include "./Game/spi_protocol.h"
 #include <string.h>
@@ -91,6 +84,102 @@ void SPI_SendShape(Shape3D* shape)
 
     UART_Printf("SPI: Shape %d sent (%d bytes, %d verts, %d tris)\r\n",
                shape->id, idx, shape->vertex_count, shape->triangle_count);
+}
+
+void SPI_SendShapeToFPGA(Shape3D* shape) {
+    uint8_t begin_cmd = CMD_BEGIN_UPLOAD;
+    SPI_TransmitPacket(&begin_cmd, 1);
+
+    for(int i = 0; i < shape->triangle_count; i++) {
+        uint8_t packet[39];
+        packet[0] = CMD_UPLOAD_TRIANGLE;
+        packet[1] = 0xFF;
+        packet[2] = 0xFF;
+
+        for(int v = 0; v < 3; v++) {
+            uint8_t vertex_idx = (v == 0) ? shape->triangles[i].v1 :
+                                (v == 1) ? shape->triangles[i].v2 :
+                                          shape->triangles[i].v3;
+
+            int32_t x = (int32_t)(shape->vertices[vertex_idx].x * 65536.0f);
+            int32_t y = (int32_t)(shape->vertices[vertex_idx].y * 65536.0f);
+            int32_t z = (int32_t)(shape->vertices[vertex_idx].z * 65536.0f);
+
+            int offset = 3 + (v * 12);
+            // Pack all three coordinates
+            packet[offset+0] = (x >> 24) & 0xFF;
+            packet[offset+1] = (x >> 16) & 0xFF;
+            packet[offset+2] = (x >> 8) & 0xFF;
+            packet[offset+3] = x & 0xFF;
+
+            packet[offset+4] = (y >> 24) & 0xFF;
+            packet[offset+5] = (y >> 16) & 0xFF;
+            packet[offset+6] = (y >> 8) & 0xFF;
+            packet[offset+7] = y & 0xFF;
+
+            packet[offset+8] = (z >> 24) & 0xFF;
+            packet[offset+9] = (z >> 16) & 0xFF;
+            packet[offset+10] = (z >> 8) & 0xFF;
+            packet[offset+11] = z & 0xFF;
+        }
+
+        SPI_TransmitPacket(packet, 39);
+    }
+}
+
+void SPI_AddModelInstance(uint8_t shape_id, Position* pos, float* rotation_matrix)
+{
+    uint8_t packet[51];
+    memset(packet, 0, 51);
+
+    packet[0] = CMD_ADD_INSTANCE;
+    packet[1] = 0x00;
+    packet[2] = shape_id;
+
+    int32_t x_fixed = (int32_t)(pos->x * 65536.0f);
+    int32_t y_fixed = (int32_t)(pos->y * 65536.0f);
+    int32_t z_fixed = (int32_t)(pos->z * 65536.0f);
+
+    // Pack position
+    packet[3] = (x_fixed >> 24) & 0xFF;
+    packet[4] = (x_fixed >> 16) & 0xFF;
+    packet[5] = (x_fixed >> 8) & 0xFF;
+    packet[6] = x_fixed & 0xFF;
+
+    packet[7] = (y_fixed >> 24) & 0xFF;
+    packet[8] = (y_fixed >> 16) & 0xFF;
+    packet[9] = (y_fixed >> 8) & 0xFF;
+    packet[10] = y_fixed & 0xFF;
+
+    packet[11] = (z_fixed >> 24) & 0xFF;
+    packet[12] = (z_fixed >> 16) & 0xFF;
+    packet[13] = (z_fixed >> 8) & 0xFF;
+    packet[14] = z_fixed & 0xFF;
+
+    // Identity matrix if no rotation provided
+    if(rotation_matrix == NULL) {
+        int32_t one = 65536;  // 1.0 in fixed point
+        int32_t zero = 0;
+
+        // Pack identity matrix (diagonal = 1, rest = 0)
+        // This is a 3x3 matrix, so 9 values
+        for(int i = 0; i < 9; i++) {
+            int32_t value = (i == 0 || i == 4 || i == 8) ? one : zero;
+            int offset = 15 + (i * 4);
+            packet[offset] = (value >> 24) & 0xFF;
+            packet[offset+1] = (value >> 16) & 0xFF;
+            packet[offset+2] = (value >> 8) & 0xFF;
+            packet[offset+3] = value & 0xFF;
+        }
+    }
+
+    SPI_TransmitPacket(packet, 51);
+}
+
+void SPI_BeginRender(void)
+{
+    uint8_t cmd = CMD_BEGIN_RENDER;  // 0xF0
+    SPI_TransmitPacket(&cmd, 1);
 }
 
 // Send obstacle positions
