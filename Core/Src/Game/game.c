@@ -74,7 +74,7 @@ void Game_Reset(void)
 
     // Reset subsystems
     Obstacles_Reset();
-    SPI_ClearScene();
+    // SPI_ClearScene();
 
     BSP_LED_Off(LED_GREEN);
 
@@ -91,7 +91,7 @@ void Game_Start(void)
         game_state.state = GAME_STATE_PLAYING;
         game_state.moving_forward = 1;
 
-        SPI_SendGameState(game_state.state, game_state.score);
+    // SPI_SendGameState(game_state.state, game_state.score);
         UART_Printf("Game started!\r\n");
     }
 }
@@ -104,7 +104,7 @@ void Game_Pause(void)
         game_state.state = GAME_STATE_PAUSED;
         game_state.moving_forward = 0;
 
-        SPI_SendGameState(game_state.state, game_state.score);
+    // SPI_SendGameState(game_state.state, game_state.score);
         UART_Printf("Game paused\r\n");
     }
 }
@@ -117,7 +117,7 @@ void Game_Resume(void)
         game_state.state = GAME_STATE_PLAYING;
         game_state.moving_forward = 1;
 
-        SPI_SendGameState(game_state.state, game_state.score);
+    // SPI_SendGameState(game_state.state, game_state.score);
         UART_Printf("Game resumed\r\n");
     }
 }
@@ -129,7 +129,7 @@ void Game_Over(void)
     game_state.moving_forward = 0;
 
     SPI_SendCollisionEvent();
-    SPI_SendGameState(game_state.state, game_state.score);
+    // SPI_SendGameState(game_state.state, game_state.score);
 
 
     UART_Printf("\r\n*** GAME OVER ***\r\n");
