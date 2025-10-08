@@ -135,19 +135,40 @@ int main(void)
     // Start UART interrupt
     HAL_UART_Receive_IT(&huart1, &uart_rx, 1);
 
-    // Run ADC test
-    UART_Printf("\r\nSTM32U545RE ADC Test Starting...\r\n");
-    //Test_ADC_Pins();  // This runs forever for testing
+    // Run ADC test (optional)
+    // UART_Printf("\r\nSTM32U545RE ADC Test Starting...\r\n");
+    // Test_ADC_Pins();  // Uncomment to test ADC
 
-    // Normal game code
-    Game_Init();
+    // Initialize buttons
+    Buttons_Init();
 
-    // Main loop
+    // Initialize SPI protocol
+    SPI_Protocol_Init(&hspi1);
+
+    // Box position
+    float box_pos[3] = {0.0f, 0.0f, 0.0f};
+    float box_rot[9] = {1,0,0, 0,1,0, 0,0,1}; // Identity rotation
+    uint8_t model_id = 0; // Box model
+
+    ADCButtonState btn_state;
+
     while (1)
     {
-        uint32_t now = HAL_GetTick();
-        Game_Update(now);
-        HAL_Delay(20);
+        Buttons_Update(&btn_state);
+        // Move box left/right
+        if (btn_state.left_pressed) {
+            box_pos[0] -= 2.0f;
+        }
+        if (btn_state.right_pressed) {
+            box_pos[0] += 2.0f;
+        }
+
+        // Send frame to simulator
+        SPI_MarkFrameStart();
+        SPI_AddModelInstance(model_id, box_pos, box_rot);
+        SPI_MarkFrameEnd();
+
+        HAL_Delay(100); // 10 FPS
     }
 }
 
