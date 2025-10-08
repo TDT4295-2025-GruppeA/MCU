@@ -1,25 +1,3 @@
-"""
-Simple FPGA simulator and local keyboard-based game visualizer.
-
-Usage:
-  - Local (keyboard) mode: python sim.py
-  - Serial mode: python sim.py --serial [device] --baud 115200
-
-Requirements:
-  * vpython 
-  * [pyserial]
-
-This script supports two modes:
- - Local mode: you can drive the player with arrow keys and space to toggle forward movement.
- - Serial mode: it reads binary PositionPacket frames from a serial port and visualizes them.
-
-Packet format expected (little-endian):
-  uint8 cmd (0x01 = POSITION_UPDATE)
-  int16 x
-  int16 y
-  int16 z
-Total size = 7 bytes
-"""
 
 import argparse
 import struct
@@ -34,20 +12,27 @@ try:
 except Exception:
     serial = None
 
-PACKET_FMT = "<Bhhh"  # uint8, int16, int16, int16
-PACKET_SIZE = struct.calcsize(PACKET_FMT)
-CMD_POSITION = 0x01
+# SPI protocol command opcodes
+CMD_RESET = 0x00
+CMD_BEGIN_UPLOAD = 0xA0
+CMD_UPLOAD_TRIANGLE = 0xA1
+CMD_ADD_MODEL_INSTANCE = 0xB0
+CMD_FRAME_START = 0xF0
+CMD_FRAME_END = 0xF1
+
+# SPI protocol packet sizes
+SIZE_UPLOAD_TRIANGLE = 41
+SIZE_ADD_MODEL_INSTANCE = 44
+
+# UART markers
+UART_PREFIX = b"Sending SPI message: "
+UART_SUFFIX = b"SPI message end"
+
 
 # Shared state
-player_pos = {'x': 0, 'y': 0, 'z': 5}
-obstacles = []  # list of dicts with x,y,z
 lock = threading.Lock()
-forward = False
-speed_z = 0.2  # units per frame when forward
-
-# Visual objects
-player_obj = None
-obs_objs = []
+obs_objs = []  # currently visible objects
+staging_objs = []  # objects for next frame
 info_label = None
 
 
@@ -63,7 +48,7 @@ def serial_thread(port, baud):
         print("Failed to open serial:", e)
         return
 
-    buf = bytearray()
+    text_buf = b""
     while True:
         try:
             data = ser.read(64)
@@ -71,94 +56,132 @@ def serial_thread(port, baud):
             print("Serial read error, exiting thread")
             break
         if data:
-            buf.extend(data)
-            # parse frames
-            while len(buf) >= PACKET_SIZE:
-                pkt = buf[:PACKET_SIZE]
-                buf = buf[PACKET_SIZE:]
-                try:
-                    cmd, x, y, z = struct.unpack(PACKET_FMT, pkt)
-                except struct.error:
-                    continue
-                if cmd == CMD_POSITION:
-                    with lock:
-                        player_pos['x'] = x
-                        player_pos['y'] = y
-                        player_pos['z'] = z
-        else:
-            time.sleep(0.005)
+            text_buf += data
+            while True:
+                start = text_buf.find(UART_PREFIX)
+                if start == -1:
+                    break
+                end = text_buf.find(UART_SUFFIX, start)
+                if end == -1:
+                    break
+                spi_data = text_buf[start + len(UART_PREFIX):end]
+                text_buf = text_buf[end + len(UART_SUFFIX):]
+                while len(spi_data) > 0:
+                    cmd = spi_data[0]
+                    if cmd == CMD_BEGIN_UPLOAD:
+                        handle_begin_upload()
+                        spi_data = spi_data[1:]
+                    elif cmd == CMD_UPLOAD_TRIANGLE and len(spi_data) >= SIZE_UPLOAD_TRIANGLE:
+                        handle_upload_triangle(spi_data[:SIZE_UPLOAD_TRIANGLE])
+                        spi_data = spi_data[SIZE_UPLOAD_TRIANGLE:]
+                    elif cmd == CMD_ADD_MODEL_INSTANCE and len(spi_data) >= SIZE_ADD_MODEL_INSTANCE:
+                        handle_add_model_instance(spi_data[:SIZE_ADD_MODEL_INSTANCE])
+                        spi_data = spi_data[SIZE_ADD_MODEL_INSTANCE:]
+                    elif cmd == CMD_FRAME_START:
+                        handle_frame_start()
+                        spi_data = spi_data[1:]
+                    elif cmd == CMD_FRAME_END:
+                        handle_frame_end()
+                        spi_data = spi_data[1:]
+                    elif cmd == CMD_RESET:
+                        handle_reset()
+                        spi_data = spi_data[1:]
+                    else:
+                        spi_data = spi_data[1:]
+
+def handle_begin_upload():
+    print("Begin Upload (not used)")
+
+def handle_upload_triangle(packet):
+    print("Upload Triangle (not used)")
+
+def handle_add_model_instance(packet):
+    model_id = packet[2]
+    pos = [int.from_bytes(packet[3:7], 'big', signed=True) / 65536.0,
+           int.from_bytes(packet[7:11], 'big', signed=True) / 65536.0,
+           int.from_bytes(packet[11:15], 'big', signed=True) / 65536.0]
+    rot = [int.from_bytes(packet[15 + i*4:19 + i*4], 'big', signed=True) / 65536.0 for i in range(9)]
+    print(f"Add Model Instance: id={model_id} pos={pos} rot={rot}")
+    if model_id == 0:
+        with lock:
+            box_obj = box(pos=vector(pos[0], pos[1], pos[2]), size=vector(4, 4, 4), color=color.green, visible=False)
+            staging_objs.append(box_obj)
+
+def handle_frame_start():
+    print("Frame Start")
+    with lock:
+        staging_objs.clear()
+
+def handle_frame_end():
+    print("Frame End")
+    with lock:
+        for ob in obs_objs:
+            ob.visible = False
+        obs_objs.clear()
+        for ob in staging_objs:
+            ob.visible = True
+            obs_objs.append(ob)
+        staging_objs.clear()
+
+def handle_reset():
+    print("Reset")
+    with lock:
+        for ob in obs_objs:
+            ob.visible = False
+        obs_objs.clear()
+        for ob in staging_objs:
+            ob.visible = False
+        staging_objs.clear()
 
 
 def create_scene():
-    global player_obj, obs_objs, info_label
+    global info_label
     scene.title = "MCU -> FPGA Simulator (visualizer)"
     scene.width = 1000
     scene.height = 700
     scene.center = vector(0, 0, 20)
     scene.background = color.gray(0.2)
-
-    player_obj = box(pos=vector(0, 0, 0), size=vector(4, 2, 2), color=color.cyan)
-
-    for i in range(10):
-        ob = box(pos=vector((i % 5) * 12 - 24, 0, i * 10 + 30), size=vector(6, 6, 6), color=color.red)
-        obs_objs.append(ob)
-
     info_label = label(pos=vector(-40, 30, 0), text="", height=16, box=False)
+    
 
+# # keyboard handlers
 
-def update_visuals():
-    # update player
-    with lock:
-        px = player_pos['x']
-        py = player_pos['y']
-        pz = player_pos['z']
-    player_obj.pos = vector(px / 1.0, py / 1.0, pz / 1.0)
-    # obstacles are static
-    info_label.text = f"Player: x={px} y={py} z={pz}  Forward={'ON' if forward else 'OFF'}"
-
-
-# keyboard handlers
-
-def keydown(evt):
-    global forward
-    s = evt.key
-    with lock:
-        if s in ('left', 'a'):
-            player_pos['x'] -= 5
-        elif s in ('right', 'd'):
-            player_pos['x'] += 5
-        elif s in ('up', 'w'):
-            player_pos['y'] += 5
-        elif s in ('down', 's'):
-            player_pos['y'] -= 5
-        elif s == ' ':
-            forward = not forward
-        elif s == 'r':
-            player_pos['x'] = 0
-            player_pos['y'] = 0
-            player_pos['z'] = 5
+# def keydown(evt):
+#     global forward
+#     s = evt.key
+#     with lock:
+#         if s in ('left', 'a'):
+#             player_pos['x'] -= 5
+#         elif s in ('right', 'd'):
+#             player_pos['x'] += 5
+#         elif s in ('up', 'w'):
+#             player_pos['y'] += 5
+#         elif s in ('down', 's'):
+#             player_pos['y'] -= 5
+#         elif s == ' ':
+#             forward = not forward
+#         elif s == 'r':
+#             player_pos['x'] = 0
+#             player_pos['y'] = 0
+#             player_pos['z'] = 5
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Simple FPGA visualizer / simulator')
+    parser = argparse.ArgumentParser(description='FPGA visualizer / simulator')
+    # parser.add_argument('--mode', choices=['keyboard', 'serial'], default='keyboard', help='Input mode: keyboard or serial')
     parser.add_argument('--serial', help='Serial port to listen for packets')
     parser.add_argument('--baud', type=int, default=115200, help='Serial baudrate')
     args = parser.parse_args()
 
-    if args.serial:
-        t = threading.Thread(target=serial_thread, args=(args.serial, args.baud), daemon=True)
-        t.start()
-
     create_scene()
-    scene.bind('keydown', keydown)
+    # if args.mode == 'serial' and args.serial:
+    t = threading.Thread(target=serial_thread, args=(args.serial, args.baud), daemon=True)
+    t.start()
+    # scene.bind('keydown', keydown)
 
     global forward
     while True:
         rate(60)
-        if forward:
-            with lock:
-                player_pos['z'] += speed_z * 10
-        update_visuals()
 
 
 if __name__ == '__main__':
