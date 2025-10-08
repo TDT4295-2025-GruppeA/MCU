@@ -23,7 +23,11 @@ static void SPI_MirrorPacketToUART(uint8_t* data, uint16_t size)
 {
     if (huart1.Instance != NULL)
     {
+        const char* prefix = "Sending SPI message: ";
+        HAL_UART_Transmit(&huart1, (uint8_t*)prefix, strlen(prefix), 100);
         HAL_UART_Transmit(&huart1, data, size, 100);
+        const char* suffix = "SPI message end";
+        HAL_UART_Transmit(&huart1, (uint8_t*)suffix, strlen(suffix), 100);
     }
 }
 #endif
