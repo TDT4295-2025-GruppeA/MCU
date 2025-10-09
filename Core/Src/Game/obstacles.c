@@ -16,6 +16,7 @@
 extern void UART_Printf(const char* format, ...);
 
 // Obstacle pool
+static uint8_t auto_spawn_enabled = 1;
 static Obstacle obstacle_pool[MAX_OBSTACLES];
 static float next_spawn_z;
 static uint32_t obstacles_passed;
@@ -30,6 +31,10 @@ void Obstacles_Init(void)
     {
         Obstacles_Spawn(OBSTACLE_SPAWN_DIST + (i * OBSTACLE_SPACING));
     }
+}
+
+void Obstacles_SetAutoSpawn(uint8_t enabled) {
+    auto_spawn_enabled = enabled;
 }
 
 // Reset all obstacles
@@ -124,7 +129,7 @@ void Obstacles_Update(float player_z, float delta_time)
     }
 
     // Check if we need to spawn new obstacles
-    if(furthest_z < player_z + OBSTACLE_SPAWN_DIST)
+    if(auto_spawn_enabled && furthest_z < player_z + OBSTACLE_SPAWN_DIST)
     {
         next_spawn_z = furthest_z + OBSTACLE_SPACING + (rand() % 20);
         Obstacles_Spawn(next_spawn_z);

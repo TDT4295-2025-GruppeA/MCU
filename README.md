@@ -137,7 +137,7 @@ SPI->[01 FFEC 0000 0006]
 ### Testing Without FPGA
 
 1. **Loopback Test**: Connect PA7 (MOSI) to PA6 (MISO) with jumper wire
-2. **Serial Monitor**: Connect to COM port at 115200 baud (sudo minicom -D /dev/ttyACM0 - b 115200)
+2. **Serial Monitor**: Connect to COM port at 115200 baud (sudo minicom -D /dev/ttyACM0 -b 115200)
 3. **Run Tests**: Press user button or send commands via UART
 
 ### UART Commands

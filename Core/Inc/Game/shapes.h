@@ -10,6 +10,7 @@
 #define SHAPES_H
 
 #include "game_types.h"
+#define SHAPE_ID_PLAYER  SHAPE_PLAYER
 
 // Shape creation functions
 void Shapes_Init(void);

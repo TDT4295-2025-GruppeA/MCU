@@ -1,10 +1,3 @@
-/*
- * collision.c
- *
- *  Created on: Sep 15, 2025
- *      Author: jornik
- */
-
 // collision.c - Collision detection implementation
 #include "./Game/collision.h"
 #include <math.h>
@@ -73,9 +66,9 @@ uint8_t Collision_BoxIntersect(Position* pos1, float w1, float h1, float d1,
     float hd2 = d2 / 2.0f;
 
     // Check overlap on all axes
-    if(fabsf(pos1->x - pos2->x) > (hw1 + hw2)) return 0;
-    if(fabsf(pos1->y - pos2->y) > (hh1 + hh2)) return 0;
-    if(fabsf(pos1->z - pos2->z) > (hd1 + hd2)) return 0;
+    if(fabsf(pos1->x - pos2->x) >= (hw1 + hw2)) return 0;
+    if(fabsf(pos1->y - pos2->y) >= (hh1 + hh2)) return 0;
+    if(fabsf(pos1->z - pos2->z) >= (hd1 + hd2)) return 0;
 
     return 1;  // Collision detected
 }

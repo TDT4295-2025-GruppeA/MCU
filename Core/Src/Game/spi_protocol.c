@@ -1,11 +1,3 @@
-/*
- * spi_protocol.c
- *
- *  Created on: Sep 15, 2025
- *      Author: jornik
- */
-#define SPI_PROTOCOL_VERSION 0x01
-
 // spi_protocol.c - SPI communication implementation
 #include "./Game/spi_protocol.h"
 #include <string.h>

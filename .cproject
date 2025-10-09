@@ -177,5 +177,12 @@
 			<resource resourceType="PROJECT" workspacePath="/Dataprosjekt"/>
 		</configuration>
 	</storageModule>
-	<storageModule moduleId="scannerConfiguration"/>
+	<storageModule moduleId="refreshScope" versionNumber="2">
+		<configuration configurationName="Debug">
+			<resource resourceType="PROJECT" workspacePath="/Dataprosjekt"/>
+		</configuration>
+		<configuration configurationName="Release">
+			<resource resourceType="PROJECT" workspacePath="/Dataprosjekt"/>
+		</configuration>
+	</storageModule>
 </cproject>

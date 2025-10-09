@@ -12,7 +12,7 @@
 #include <string.h>
 
 // SPI Configuration
-#define FPGA_SPI_INSTANCE     hspi1  // Change based on your SPI peripheral
+#define FPGA_SPI_INSTANCE     hspi1
 #define FPGA_CS_PORT          GPIOA
 #define FPGA_CS_PIN           GPIO_PIN_4
 #define SPI_TIMEOUT_MS        100
