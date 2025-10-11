@@ -134,7 +134,9 @@ void Game_Over(void)
     game_state.state = GAME_STATE_GAME_OVER;
     game_state.moving_forward = 0;
 
-    SPI_SendCollisionEvent();
+    // TODO: SPI_SendCollisionEvent() used the old protocol. Commenting out
+    // for now until collision event support is implemented in the new protocol.
+    // SPI_SendCollisionEvent();
     // SPI_SendGameState(game_state.state, game_state.score);
 
 
@@ -165,7 +167,10 @@ void Game_Update(uint32_t current_time)
         Update_Score();
 
         // 3. RENDERING TO FPGA
+        // Wrap render with frame start/end so the new protocol receives frames
+        SPI_MarkFrameStart();
         Render_Frame();
+        SPI_MarkFrameEnd();
     }
 }
 
@@ -248,7 +253,16 @@ static void Render_Frame(void)
     // Clear previous frame instances
     // SPI_ClearScene();
     // 1. Send player as model instance
-    SPI_AddModelInstance(SHAPE_ID_PLAYER, &game_state.player_pos, NULL);  // NULL = no rotation
+    // New protocol expects a rotation matrix; pass identity if none
+    float identity_rot[9] = {
+        1.0f, 0.0f, 0.0f,
+        0.0f, 1.0f, 0.0f,
+        0.0f, 0.0f, 1.0f
+    };
+    {
+        float player_pos_arr[3] = { game_state.player_pos.x, game_state.player_pos.y, game_state.player_pos.z };
+        SPI_AddModelInstance(SHAPE_ID_PLAYER, player_pos_arr, identity_rot);
+    }
 
     // 2. Send visible obstacles as model instances
     Obstacle* obstacles = Obstacles_GetArray();
@@ -262,14 +276,15 @@ static void Render_Frame(void)
 
             // Only send if visible
             if(relative_pos.z > -20 && relative_pos.z < 150) {
-                SPI_AddModelInstance(obstacles[i].shape_id, &relative_pos, NULL);
+                float rel_pos_arr[3] = { relative_pos.x, relative_pos.y, relative_pos.z };
+                SPI_AddModelInstance(obstacles[i].shape_id, rel_pos_arr, identity_rot);
                 instances_sent++;
             }
         }
     }
 
     // 3. Tell FPGA to render the frame
-    SPI_BeginRender();
+    // Note: frame boundaries are handled by Game_Update (SPI_MarkFrameStart/End)
 }
 
 // Handle button input
