@@ -135,7 +135,15 @@ void SPI_UploadTriangle(uint16_t color, float v0[3], float v1[3], float v2[3])
 // Add model instance (0xB0): Reserved(1), Model ID(1), Position X/Y/Z (Q16.16), Rotation 3x3 (Q16.16)
 void SPI_AddModelInstance(uint8_t model_id, float pos[3], float rot[9])
 {
-    uint8_t packet[44];
+    /* packet layout:
+     * 1 byte opcode
+     * 1 byte reserved
+     * 1 byte model_id
+     * 3 * 4 bytes position (Q16.16)
+     * 9 * 4 bytes rotation (Q16.16)
+     * = 1 + 1 + 1 + 12 + 36 = 51 bytes
+     */
+    uint8_t packet[51];
     uint16_t idx = 0;
     packet[idx++] = 0xB0;
     packet[idx++] = 0x00; // reserved
