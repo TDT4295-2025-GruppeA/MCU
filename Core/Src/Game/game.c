@@ -43,9 +43,9 @@ void Game_Init(void)
     Obstacles_Init();
     // Send shapes to FPGA
     UART_Printf("Sending shapes to FPGA...\r\n");
-    SPI_SendShapeToFPGA(Shapes_GetPlayer());
-    SPI_SendShapeToFPGA(Shapes_GetCube());
-    SPI_SendShapeToFPGA(Shapes_GetCone());
+    // SPI_SendShapeToFPGA(Shapes_GetPlayer());
+    // SPI_SendShapeToFPGA(Shapes_GetCube());
+    // SPI_SendShapeToFPGA(Shapes_GetCone());
 
     // Initialize game state
     Game_Reset();

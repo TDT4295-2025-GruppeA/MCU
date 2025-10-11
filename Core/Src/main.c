@@ -258,7 +258,7 @@ int main(void)
 	}
 	#else
 		// Normal game code
-		Game_Init();
+		// Game_Init();
 	#endif
 	/* USER CODE END 2 */
 
@@ -267,8 +267,37 @@ int main(void)
   while (1)
   {
     uint32_t now = HAL_GetTick();
-    Game_Update(now);
-    HAL_Delay(20);
+      UART_Printf("NEW FLASHED CODE!!!\r\n");
+  // --- Simple test: send frame start, add model instance, frame end when button pressed ---
+  static ADCButtonState btn_state;
+  static uint8_t last_left = 0;
+  static uint8_t last_right = 0;
+  static float pos[3] = {0.0f, 0.0f, 20.0f};
+  float rot[9] = {
+    1.0f, 0.0f, 0.0f,
+    0.0f, 1.0f, 0.0f,
+    0.0f, 0.0f, 1.0f
+  };
+
+  Buttons_Update(&btn_state);
+  // Move left/right on button press (not hold)
+  if (btn_state.left && !last_left) {
+    pos[0] -= 2.0f;
+  }
+  if (btn_state.right && !last_right) {
+    pos[0] += 2.0f;
+  }
+  // Send frame if any button pressed (edge)
+  // if ((btn_state.left && !last_left) || (btn_state.right && !last_right)) {
+    SPI_MarkFrameStart();
+    SPI_AddModelInstance(0, pos, rot);
+    SPI_MarkFrameEnd();
+  UART_Printf("Sent frame with model instance (button pressed)\r\n");
+  // }
+  last_left = btn_state.left;
+  last_right = btn_state.right;
+  // Game_Update(now);
+  HAL_Delay(1000);
   }
     /* USER CODE END WHILE */
 
