@@ -31,8 +31,9 @@ UART_SUFFIX = b"SPI message end"
 
 # Shared state
 lock = threading.Lock()
-obs_objs = []  # currently visible objects
-staging_objs = []  # objects for next frame
+# Store high-level instance descriptors in staging; actual VPython objects live in obs_objs
+obs_objs = []  # currently visible VPython objects
+staging_objs = []  # descriptors for next frame: dicts with keys: id, pos, rot
 info_label = None
 DEBUG = False
 
@@ -115,25 +116,43 @@ def handle_add_model_instance(packet):
     rot = [int.from_bytes(packet[15 + i*4:19 + i*4], 'big', signed=True) / 65536.0 for i in range(9)]
 
     dbg(f"Add Model Instance: id={model_id} pos={pos} rot={rot}")
-    if model_id == 0:
-        with lock:
-            box_obj = box(pos=vector(pos[0], pos[1], pos[2]), size=vector(4, 4, 4), color=color.green, visible=False)
-            staging_objs.append(box_obj)
+    # Append a descriptor to staging; actual VPython objects are created on frame end in the main thread
+    desc = { 'id': model_id, 'pos': pos, 'rot': rot }
+    with lock:
+        staging_objs.append(desc)
 
 def handle_frame_start():
     dbg("Frame Start")
     with lock:
+        # Clear staging descriptors for new frame
         staging_objs.clear()
 
 def handle_frame_end():
     dbg("Frame End")
     with lock:
+        # Rebuild VPython objects from staging descriptors
+        # Hide and clear existing objects
         for ob in obs_objs:
-            ob.visible = False
+            try:
+                ob.visible = False
+            except Exception:
+                pass
         obs_objs.clear()
-        for ob in staging_objs:
-            ob.visible = True
-            obs_objs.append(ob)
+
+        # Create VPython objects for each descriptor
+        for desc in staging_objs:
+            mid = desc.get('id', 0)
+            p = desc.get('pos', [0,0,0])
+            # Choose color based on model id
+            col = color.green if mid == 0 else color.red
+            try:
+                box_obj = box(pos=vector(p[0], p[1], p[2]), size=vector(4,4,4), color=col, visible=True)
+                obs_objs.append(box_obj)
+            except Exception:
+                # If VPython isn't available in this thread, skip creation
+                pass
+
+        # Clear staging descriptors after swapping
         staging_objs.clear()
 
 def handle_reset():
@@ -155,6 +174,10 @@ def create_scene():
     scene.center = vector(0, 0, 20)
     scene.background = color.gray(0.2)
     info_label = label(pos=vector(-40, 30, 0), text="", height=16, box=False)
+    # Ensure object lists are empty at start
+    with lock:
+        obs_objs.clear()
+        staging_objs.clear()
     
 
 # # keyboard handlers
