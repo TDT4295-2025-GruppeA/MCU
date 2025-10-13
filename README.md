@@ -1,286 +1,301 @@
-# STM32-FPGA 3D Graphics Controller
+# Flyboy 3D - STM32-FPGA Graphics Game
 
 ## Project Overview
 
-This project implements a real-time 3D graphics control system using an STM32U5 microcontroller as the game logic processor and an FPGA as the graphics rendering engine. The system is designed for a 7-person team developing a complete gaming platform with custom PCB and FPGA acceleration.
+A real-time 3D endless runner game using STM32U5 microcontroller for game logic and FPGA for graphics rendering. The player navigates through 3D space avoiding obstacles, with persistent high scores and configurable shapes stored on SD card.
 
 ### Team Structure
 
-- **MCU Programming** (2 person): Game logic, controller input, SPI communication
+- **MCU Programming** (2 people): Game logic, input handling, SD card storage, testing framework
 - **FPGA Development** (3 people): 3D graphics rendering, display output
-- **PCB Design** (2 people): Hardware integration
-
-### Goal
-
-Create a simple 3D game where the player moves through a 3D space, with the STM32 handling game logic and sending coordinate data to the FPGA for rendering.
-The first databus should send the different game objects (cubes, the play character/object etc). Then the rest of the messages should specify the location of different objects to be spawned.
-We start with only moving the player in the x-axis so we fly straigth forward and spawning cubes infront to avoid.
+- **PCB Design** (2 people): Hardware integration, SD card interface
 
 ## Current Status
 
 ### Completed
 
-- **SPI Communication**: Working bidirectional SPI interface at configurable speeds
-- **Button Input**: Single button control with gesture recognition (single/double click, hold)
-- **Position Tracking**: Real-time 3D coordinate system (X, Y, Z)
-- **UART Debug Interface**: Serial communication for testing and debugging
-- **Modular Code Structure**: Separated game logic from hardware abstraction
+- **Game Engine**: Endless runner with collision detection
+- **SD Card Storage**: Persistent high scores and shape data
+- **SPI Communication**: Dual SPI (FPGA graphics + SD card)
+- **Input System**: ADC-based dual button control
+- **Shape System**: Dynamic 3D shapes (player, cubes, cones) with SD persistence
+- **Collision Detection**: AABB (Axis-Aligned Bounding Box) system
+- **Testing Framework**: Unit tests
+- **Debug Interface**: UART command system for runtime testing
 
-### 🚧 In Progress
+### In Progress
 
-- FPGA protocol finalization
-- Multiple button support
-- Game physics implementation
+- Transformations of shapes sent to FPGA
+- Difficulty progression system
+- Sound effects integration
 
-### TODO
+## Features
 
-- Connect to actual FPGA hardware
-- Optimize rendering pipeline
+### Game Mechanics
+- Forward auto-scrolling at configurable speed
+- Left/right movement to avoid obstacles
+- Dynamic obstacle spawning with minimum spacing
+- Score tracking (distance + obstacles passed)
+- Collision detection with boundary checking
+
+### Data Persistence
+- High score saving to SD card
+- Game statistics (total games, play time)
+- 3D shape storage and loading
+- Automatic save on game over
+
+### Testing System
+- Unit tests for all modules
+- SD card verification tests
+- UART command interface for runtime testing
+- See [Test Documentation](test_documentation.md) for details
 
 ## Hardware Setup
 
-### Board
+### Board Configuration
 
-- **MCU**: STM32U545RE-Q (Nucleo-64)
-- **Core**: ARM Cortex-M33
-- **Clock**: 4 MHz (configurable up to 160 MHz)
-- **Debug**: ST-LINK V3 integrated
+```
+MCU: STM32U545RE-Q (Nucleo-64)
+Core: ARM Cortex-M33 @ 4 MHz
+Memory: 512KB Flash, 256KB SRAM
+Debug: ST-LINK V3 integrated
+```
 
-### Pin Configuration
+### Pin Assignments
 
-``` markdown
+```
 SPI1 (FPGA Communication):
-- PA5 (D13) - SCK  (Clock)
-- PA6 (D12) - MISO (Master In)
-- PA7 (D11) - MOSI (Master Out)  
-- PA4 (D10) - CS   (Chip Select - GPIO)
+- PA5 (D13) - SCK
+- PA6 (D12) - MISO  
+- PA7 (D11) - MOSI
+- PA4 (D10) - CS (GPIO)
 
-UART1 (Debug Console):
-- Connected via ST-LINK VCP
+SPI3 (SD Card):
+- PC10 - SCK
+- PC11 - MISO (needs 10kΩ pull-up to 3.3V)
+- PC12 - MOSI
+- PB0  - CS (GPIO)
+
+ADC Inputs:
+- PC0 - Button 1 (ADC1_IN1)
+- PC1 - Button 2 (ADC1_IN2)
+
+UART1 (Debug):
+- PA9  - TX (via ST-LINK)
+- PA10 - RX (via ST-LINK)
 - 115200 baud, 8N1
-
-User Input:
-- PC13 - USER button (blue)
-- PA5  - LED_GREEN
 ```
 
 ## Software Architecture
 
-### File Structure
+### Modular Structure
 
-``` markdown
+```
 Core/
 ├── Inc/
-	├──Game/
-		├── collision.h 
-		├── game_types.h
-		├── game.h 	 
-		├── input.h
-		├── obstacles.h
-		├── shapes.h
-		├── spi_protocol.h
-│   ├── main.h           # System definitions
-│   ├── buttons.h        # Button input handling
-│   └── fpga_spi.h       # FPGA communication protocol
+│   ├── main.h
+│   ├── peripherals.h       # Hardware initialization
+│   ├── uart_debug.h        # Debug output
+│   ├── adc_functions.h     # ADC helpers
+│   ├── Game/
+│   │   ├── game.h          # Main game logic
+│   │   ├── collision.h     # Collision detection
+│   │   ├── obstacles.h     # Obstacle management
+│   │   ├── shapes.h        # 3D shape definitions
+│   │   ├── input.h         # Input processing
+│   │   └── spi_protocol.h  # FPGA communication
+│   ├── SDCard/
+│   │   ├── sd_card.h       # SD card driver
+│   │   └── game_storage.h  # Save/load system
+│   └── Test/
+│       ├── test_framework.h # Testing macros
+│       └── command_handler.h # UART commands
 ├── Src/
-	├──Game/
-		├── collision.c
-		├── game.c
-		├── input.c
-		├── obstacles.c
-		├── shapes.c
-		├── spi_protocol.c
-│   ├── main.c           # System initialization
-│   ├── game.c           # Game logic implementation
-│   ├── buttons.c        # Button driver
-│   └── fpga_spi.c       # SPI protocol implementation
+│   ├── main.c              # Entry point (150 lines)
+│   ├── peripherals.c       # All peripheral init
+│   ├── uart_debug.c        # UART functions
+│   ├── Game/               # Game implementation
+│   ├── SDCard/             # Storage implementation
+│   └── Test/               # Test suites
 ```
 
-### Communication Protocol
+### Communication Protocols
 
-#### Position Update Packet (MCU → FPGA)
+#### FPGA Graphics Protocol (SPI1)
 
 ```c
-struct {
-    uint8_t cmd;     // 0x01 = POSITION_UPDATE
-    int16_t x;       // X coordinate (-100 to +100)
-    int16_t y;       // Y coordinate (-50 to +50)
-    int16_t z;       // Z coordinate (0 to ∞)
-} packet;  // 7 bytes total
+// Shape definition packet
+CMD_DEFINE_SHAPE (0x01)
+[cmd | shape_id | vertex_count | vertices... | triangle_count | triangles...]
+
+// Instance rendering packet  
+CMD_ADD_INSTANCE (0x02)
+[cmd | shape_id | x | y | z | rotation]
+
+// Frame control
+CMD_BEGIN_RENDER (0x04)
+[cmd | frame_number]
 ```
 
-#### Example SPI Transaction
+#### SD Card Storage Format
 
-```markdown
-[Frame 1] POS: X=0, Y=0, Z=3
-SPI->[01 0000 0000 0003]
-
-[Frame 2] POS: X=-20, Y=0, Z=6
-SPI->[01 FFEC 0000 0006]
+```
+Block 100: Game save data (high score, stats)
+Block 200: Player shape
+Block 201: Cube shape  
+Block 202: Cone shape
+Block 500+: Test data
 ```
 
 ## Building and Running
 
-### Prerequisites
+### Build Configurations
 
-- STM32CubeIDE 1.16.0 or later
-- ST-LINK drivers
-- Serial terminal (PuTTY, Tera Term, or screen)
+1. **Debug** (Normal Game)
+   - Project → Properties → C/C++ Build → Settings
+   - Configuration: Debug
+   - Build and run normally
 
-### Build Instructions
+2. **UNIT_TESTS** (Test Mode)
+   - Add define: `RUN_UNIT_TESTS`
+   - Runs all tests on startup
+   - See [Test Documentation](test_documentation.md)
 
-1. Clone the repository
-2. Open project in STM32CubeIDE
-3. Build project (Ctrl+B)
-4. Flash to board (F11)
+### Quick Start
 
-### Testing Without FPGA
+```bash
+# Clone repository
+git clone [repository-url]
 
-1. **Loopback Test**: Connect PA7 (MOSI) to PA6 (MISO) with jumper wire
-2. **Serial Monitor**: Connect to COM port at 115200 baud (sudo minicom -D /dev/ttyACM0 -b 115200)
-3. **Run Tests**: Press user button or send commands via UART
+# Open in STM32CubeIDE
+File → Import → Existing Projects
 
-### UART Commands
+# Build (Ctrl+B)
+# Flash to board (F11)
 
-``` markdown
-Movement:
-  a/d - Move left/right
-  w/s - Start/stop forward movement
-  r   - Reset position
-
-Debug:
-  0-3 - Set debug verbosity
-  p   - Toggle SPI data display
-  ?   - Show help
+# Connect serial terminal
+sudo screen /dev/ttyACM0 115200
 ```
 
-### Button Controls
+## Playing the Game
 
-- **Single Click**: Move left (-20 units)
-- **Double Click**: Move right (+20 units)
-- **Hold (>1s)**: Toggle forward movement
+### Controls
+
+**ADC Buttons:**
+- Button 1: Move left
+- Button 2: Move right
+- Both: Pause/Resume
+- Hold Button 1: Reset game
+
+
+### Gameplay
+
+1. Game starts automatically on power-up
+2. Player moves forward continuously
+3. Use buttons to dodge obstacles
+4. Score increases with distance and obstacles passed
+5. Game saves high score automatically
 
 ## Development Guide
 
 ### Adding New Features
 
-#### 1. New Game Objects
-
-Add to `game.h`:
-
+#### New Obstacle Types
 ```c
-typedef struct {
-    Position pos;
-    uint8_t type;
-    Color color;
-} GameObject;
+// In obstacles.c
+void Spawn_NewObstacleType(void) {
+    obstacle->type = OBSTACLE_MOVING;
+    obstacle->velocity = 5.0f;
+}
 ```
 
-#### 2. New SPI Commands
-
-Add to `fpga_spi.h`:
-
+#### New Shapes
 ```c
-#define CMD_DRAW_CUBE   0x10
-#define CMD_DRAW_SPHERE 0x11
+// In shapes.c
+void Shapes_CreatePyramid(Shape3D* shape) {
+    shape->vertex_count = 5;
+    // Define vertices and triangles
+}
 ```
 
-#### 3. New Input Methods
+### Running Tests
 
-Modify `buttons.c` for additional buttons or implement I2C for external controllers.
+```bash
+# Via build configuration change preprocessor
+Set RUN_UNIT_TESTS define → Build → Run
 
-### Debugging Tips
+```
 
-1. **Check SPI signals** with oscilloscope on PA5 (SCK) and PA7 (MOSI)
-2. **Monitor UART output** for position updates and debug messages
-3. **Use LED feedback** - Green LED indicates button press/SPI activity
-4. **Enable verbose mode** - Send '3' via UART for detailed output
+See [Test Documentation](test_documentation.md) for complete testing guide.
 
-### Code Style
+## Performance
 
-- Use clear variable names
-- Comment protocol packets
-- Keep functions under 50 lines
-- Use integer math where possible (avoid float)
-
-## FPGA Integration
-
-### Expected FPGA Functionality
-
-1. Receive position data via SPI
-2. Apply 3D transformation matrices
-3. Render objects at given coordinates
-4. Handle display output
-
-### Coordinate System
-
-- **Origin**: Center of screen at Z=0
-- **X-axis**: -100 (left) to +100 (right)
-- **Y-axis**: -50 (bottom) to +50 (top)
-- **Z-axis**: 0 (near) to ∞ (far)
-
-### Timing Requirements
-
-- Position updates: Every 1.5 seconds (configurable)
-- SPI clock: 250 kHz (4MHz/16 prescaler)
-- Game loop: 50 Hz polling rate
+- Game loop: 50 Hz (20ms update)
+- SPI1 (FPGA): 250 kHz
+- SPI3 (SD): 156.25 kHz  
+- Position updates: Real-time
+- Save time: <100ms
 
 ## Troubleshooting
 
-### No UART Output
+### SD Card Not Working
+- Ensure 10kΩ pull-up on MISO (PC11)
+- Check both ground connections (pins 3 & 6)
+- Try different card (≤32GB, FAT32 formatted)
+- Run `test sd` command
 
-- Check COM port in Device Manager
-- Verify 115200 baud rate
-- Ensure USART1 is enabled in CubeMX
+### No Button Response
+- Verify pull-ups on PC0/PC1
+- Buttons should read <100 when pressed
 
-### SPI Not Working
+### Game Not Starting
+- Check UART output for initialization
+- Verify all shapes loaded from SD
+- Try `reset` command
 
-- Verify loopback connection (PA7→PA6)
-- Check SPI1 enabled in CubeMX
-- Monitor CS pin (PA4) - should pulse low during transmission
+## Testing
 
-### Position Values Not Printing
+The project includes comprehensive unit tests covering:
+- Collision detection algorithms
+- Obstacle spawning logic
+- SD card operations
+- Shape storage/loading
+- Game state management
 
-- Code uses integer casting: `UART_Printf("X=%d", (int)pos.x)`
-- To enable float support: Add `-u _printf_float` to linker flags (adds ~10KB)
-
-## Contributing
-
-### Testing Checklist
-
-- [ ] Code compiles without warnings
-- [ ] SPI loopback test passes
-- [ ] Button inputs respond correctly
-- [ ] UART output is readable
-- [ ] No memory leaks (check with debugger)
+**[See Test Documentation](test_documentation.md)** for:
+- Test framework setup
+- Running tests
+- Writing new tests
+- Coverage reports
 
 ## Resources
 
 ### Documentation
-
-- [STM32U5 Reference Manual](https://www.st.com/resource/en/reference_manual/rm0456-stm32u5-series-armbased-32bit-mcus-stmicroelectronics.pdf)
-- [HAL Driver User Manual](https://www.st.com/resource/en/user_manual/um2570-description-of-stm32u5-hal-and-lowlayer-drivers-stmicroelectronics.pdf)
-- [Nucleo-U545RE User Manual](https://www.st.com/resource/en/user_manual/um2861-stm32u5-nucleo64-boards-mb1549-stmicroelectronics.pdf)
+- [STM32U5 Reference Manual](https://www.st.com/resource/en/user_manual/um3062-stm32u3u5-nucleo64-board-mb1841-stmicroelectronics.pdf)
+- [SD Card SPI Protocol](http://elm-chan.org/docs/mmc/mmc_e.html)
 
 ### Tools
+- [STM32CubeIDE](https://www.st.com/en/development-tools/stm32cubeide.html)
+- [PuTTY](https://www.putty.org/) - Windows terminal
+- [Logic Analyzer](https://www.saleae.com/) - SPI debugging
 
-- [STM32CubeMX](https://www.st.com/en/development-tools/stm32cubemx.html) - Configuration tool
-- [PuTTY](https://www.putty.org/) - Serial terminal
-- [Logic Analyzer Software](https://www.saleae.com/downloads/) - For debugging SPI
+## Contributing
 
-## License
+### Before Committing
+- [ ] Run all unit tests (Change preprocessor to run)
+- [ ] Verify SD card operations
+- [ ] Check no compiler warnings
+- [ ] Update documentation for new features
+- [ ] Test on actual hardware
 
-This project is developed as part of a university course. All rights reserved.
 
 ## Contact
 
-For questions about:
-
-- **MCU/Game Logic**: [Jorgnik@ntnu.no]
-- **FPGA Development**: [Jorgfje@ntnu.no]
-- **PCB Design**: [Rikkees@ntnu.no]
+- **MCU/Game Logic**: Jorgnik@ntnu.no
+- **FPGA Development**: Jorgfje@ntnu.no  
+- **PCB Design**: Rikkees@ntnu.no
 
 ---
 
-*Last Updated: September 2025*
-*Version: 0.1.0*
+*Last Updated: November 2024*  
+*Version: 1.0.0*

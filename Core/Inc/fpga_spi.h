@@ -1,10 +1,3 @@
-/*
- * fpga_spi.h
- *
- *  Created on: Sep 8, 2025
- *      Author: jornik
- */
-
 #ifndef FPGA_SPI_H
 #define FPGA_SPI_H
 

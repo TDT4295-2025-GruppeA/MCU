@@ -34,4 +34,15 @@ GameState* Game_GetState(void);
 uint32_t Game_GetScore(void);
 uint8_t Game_IsRunning(void);
 
+typedef struct {
+    uint32_t high_score;
+    uint32_t total_games;
+    uint32_t total_time;
+    uint32_t last_score;
+} GameStats;
+
+// SD card
+void Game_SaveStats(void);
+void Game_LoadStats(void);
+
 #endif // GAME_H

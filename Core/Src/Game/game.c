@@ -4,12 +4,15 @@
 #include "./Game/collision.h"
 #include "./Game/spi_protocol.h"
 #include "./Game/input.h"
+#include "./SDCard/sd_card.h"
+#include "./SDCard/game_storage.h"
 #include "buttons.h"
 #include "main.h"
 #include <string.h>
 
 // External handles from main.c
 extern SPI_HandleTypeDef hspi1;
+extern SPI_HandleTypeDef hspi3;
 extern UART_HandleTypeDef huart1;
 extern void UART_Printf(const char* format, ...);
 
@@ -18,12 +21,16 @@ static GameState game_state;
 static uint32_t last_update_time = 0;
 static uint32_t score_multiplier = 1;
 static ADCButtonState adc_buttons;
+static GameStats game_stats = {0};
+static uint32_t game_start_time = 0;
+static uint8_t sd_card_ready = 0;
 static void Handle_Input(void);
 static void Move_Player(float delta_x);
 static void Update_GameLogic(float delta_time);
 static void Check_Collisions(void);
 static void Update_Score(void);
 static void Render_Frame(void);
+
 
 
 // Initialize game
@@ -41,6 +48,21 @@ void Game_Init(void)
     Buttons_Init();
     Shapes_Init();
     Obstacles_Init();
+
+    UART_Printf("Initializing SD Card...\r\n");
+	if(Storage_Init(&hspi3) == SD_OK) {
+		sd_card_ready = 1;
+
+		Storage_InitializeShapes();
+
+		Game_LoadStats();
+		UART_Printf("SD Card ready. High Score: %lu\r\n", game_stats.high_score);
+	} else {
+		sd_card_ready = 0;
+		UART_Printf("SD Card not found - playing without saves\r\n");
+	}
+
+
     // Send shapes to FPGA
     UART_Printf("Sending shapes to FPGA...\r\n");
     SPI_SendShapeToFPGA(Shapes_GetPlayer());
@@ -96,9 +118,10 @@ void Game_Start(void)
         Game_Reset();
         game_state.state = GAME_STATE_PLAYING;
         game_state.moving_forward = 1;
+        game_start_time = HAL_GetTick();  // Track game start time
 
         SPI_SendGameState(game_state.state, game_state.score);
-        UART_Printf("Game started!\r\n");
+        UART_Printf("Game started! Beat high score: %lu\r\n", game_stats.high_score);
     }
 }
 
@@ -137,11 +160,76 @@ void Game_Over(void)
     SPI_SendCollisionEvent();
     SPI_SendGameState(game_state.state, game_state.score);
 
+    // Update statistics
+    uint32_t game_time = (HAL_GetTick() - game_start_time) / 1000;  // seconds
+    game_stats.total_games++;
+    game_stats.total_time += game_time;
+    game_stats.last_score = game_state.score;
+
+    // Check for new high score
+    uint8_t new_high_score = 0;
+    if(game_state.score > game_stats.high_score) {
+        game_stats.high_score = game_state.score;
+        new_high_score = 1;
+    }
+
+    // Save to SD card
+    if(sd_card_ready) {
+        Game_SaveStats();
+    }
 
     UART_Printf("\r\n*** GAME OVER ***\r\n");
-    UART_Printf("Final Score: %lu\r\n", game_state.score);
+    if(new_high_score) {
+        UART_Printf("NEW HIGH SCORE: %lu!!\r\n", game_state.score);
+    } else {
+        UART_Printf("Score: %lu (High: %lu)\r\n", game_state.score, game_stats.high_score);
+    }
+    UART_Printf("Game Time: %lu seconds\r\n", game_time);
     UART_Printf("Obstacles Passed: %lu\r\n", Obstacles_CheckPassed(game_state.player_pos.z));
-    UART_Printf("Press R to restart\r\n\r\n");
+    UART_Printf("Total Games: %lu\r\n", game_stats.total_games);
+    UART_Printf("Press button to play again\r\n\r\n");
+}
+
+void Game_SaveStats(void)
+{
+    if(!sd_card_ready) return;
+
+    GameSave save;
+    save.magic = 0x47414D45;  // "GAME"
+    save.version = 1;
+    save.high_score = game_stats.high_score;
+    save.total_played = game_stats.total_games;
+    save.total_time = game_stats.total_time;
+
+    // Simple checksum
+    save.checksum = save.high_score ^ save.total_played ^ save.total_time;
+
+    if(Storage_SaveGame(&save) == SD_OK) {
+        UART_Printf("Stats saved to SD card\r\n");
+    } else {
+        UART_Printf("Failed to save stats\r\n");
+    }
+}
+
+void Game_LoadStats(void)
+{
+    if(!sd_card_ready) return;
+
+    GameSave save;
+    if(Storage_LoadGame(&save) == SD_OK) {
+        // Verify checksum
+        uint32_t check = save.high_score ^ save.total_played ^ save.total_time;
+        if(check == save.checksum) {
+            game_stats.high_score = save.high_score;
+            game_stats.total_games = save.total_played;
+            game_stats.total_time = save.total_time;
+            UART_Printf("Stats loaded from SD card\r\n");
+        } else {
+            UART_Printf("Save file corrupted, starting fresh\r\n");
+        }
+    } else {
+        UART_Printf("No save file found, creating new\r\n");
+    }
 }
 
 void Game_Update(uint32_t current_time)

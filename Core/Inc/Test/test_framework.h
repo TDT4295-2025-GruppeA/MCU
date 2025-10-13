@@ -1,10 +1,3 @@
-/*
- * test_framework.h
- *
- *  Created on: Oct 2, 2025
- *      Author: jornik
- */
-
 #ifndef INC_TEST_TEST_FRAMEWORK_H_
 #define INC_TEST_TEST_FRAMEWORK_H_
 
