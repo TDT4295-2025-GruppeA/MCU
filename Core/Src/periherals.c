@@ -28,7 +28,7 @@ void Peripherals_Init(void)
     BSP_PB_Init(BUTTON_USER, BUTTON_MODE_EXTI);
 }
 
-static void MX_GPIO_Init(void)
+void MX_GPIO_Init(void)
 {
     GPIO_InitTypeDef GPIO_InitStruct = {0};
 
@@ -54,7 +54,7 @@ static void MX_GPIO_Init(void)
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 }
 
-static void MX_ICACHE_Init(void)
+void MX_ICACHE_Init(void)
 {
     if (HAL_ICACHE_ConfigAssociativityMode(ICACHE_1WAY) != HAL_OK) {
         Error_Handler();
@@ -64,7 +64,7 @@ static void MX_ICACHE_Init(void)
     }
 }
 
-static void MX_USART1_UART_Init(void)
+void MX_USART1_UART_Init(void)
 {
     huart1.Instance = USART1;
     huart1.Init.BaudRate = 115200;
@@ -82,7 +82,7 @@ static void MX_USART1_UART_Init(void)
     }
 }
 
-static void MX_SPI1_Init(void)
+void MX_SPI1_Init(void)
 {
     hspi1.Instance = SPI1;
     hspi1.Init.Mode = SPI_MODE_MASTER;
@@ -102,7 +102,7 @@ static void MX_SPI1_Init(void)
     }
 }
 
-static void MX_SPI3_Init(void)
+void MX_SPI3_Init(void)
 {
     hspi3.Instance = SPI3;
     hspi3.Init.Mode = SPI_MODE_MASTER;
@@ -120,7 +120,7 @@ static void MX_SPI3_Init(void)
     }
 }
 
-static void MX_ADC1_Init(void)
+void MX_ADC1_Init(void)
 {
     ADC_ChannelConfTypeDef sConfig = {0};
 
