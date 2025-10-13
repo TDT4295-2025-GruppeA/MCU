@@ -12,10 +12,23 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "./Game/game.h"
+#include "./Test/command_handler.h"
 #include "buttons.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
+
+#ifdef RUN_UNIT_TESTS
+    #include "./SDCard/sd_card.h"
+    #include "./SDCard/game_storage.h"
+    #include "./Game/shapes.h"
+
+    // Test functions
+    extern void Run_Collision_Tests(void);
+    extern void Run_Obstacle_Tests(void);
+    extern void Run_SDCard_Tests(void);
+#endif
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -64,6 +77,54 @@ void Test_With_Hardware(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+#ifdef RUN_UNIT_TESTS
+// Only compile this function when in test mode
+void Run_All_Unit_Tests(void) {
+    UART_Printf("\r\n=== RUNNING UNIT TESTS ===\r\n");
+
+    // Initialize what we need for tests
+    if(Storage_Init(&hspi3) == SD_OK) {
+        UART_Printf("SD Card ready for testing\r\n");
+        Shapes_Init();
+        Storage_InitializeShapes();
+    }
+
+    // Run each test suite
+    Run_Collision_Tests();
+    Run_Obstacle_Tests();
+
+    if(SD_IsPresent()) {
+        Run_SDCard_Tests();
+    } else {
+        UART_Printf("Skipping SD tests - no card\r\n");
+    }
+
+    UART_Printf("\r\n=== ALL TESTS COMPLETE ===\r\n");
+}
+#endif
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+    if(huart->Instance == USART1)
+    {
+        if(uart_rx == '\r' || uart_rx == '\n') {
+            uart_command[uart_cmd_index] = '\0';
+            if(uart_cmd_index > 0) {
+                Process_UART_Command(uart_command);  // Calls your handler
+            }
+            uart_cmd_index = 0;
+            memset(uart_command, 0, sizeof(uart_command));
+        }
+        else if(uart_cmd_index < 63 && uart_rx >= 32) {
+            uart_command[uart_cmd_index++] = uart_rx;
+            HAL_UART_Transmit(&huart1, &uart_rx, 1, 10);  // Echo
+        }
+
+        HAL_UART_Receive_IT(&huart1, &uart_rx, 1);
+    }
+}
+
 // ADC Channel reading function
 uint32_t Read_ADC_Channel(uint32_t channel) {
     ADC_ChannelConfTypeDef sConfig = {0};
@@ -93,54 +154,6 @@ uint32_t Read_ADC_Channel(uint32_t channel) {
     return value;
 }
 
-// Test function to verify ADC is working
-void Test_ADC_Pins(void) {
-    UART_Printf("\r\n=== Testing ADC1 on STM32U545RE ===\r\n");
-    UART_Printf("Nothing connected = should see ~2048 (floating)\r\n");
-    UART_Printf("With pull-up = should see ~4095\r\n");
-    UART_Printf("Button pressed to GND = should see ~0\r\n\r\n");
-
-    while(1) {
-        uint32_t pc0 = Read_ADC_Channel(ADC_CHANNEL_1);  // PC0
-        uint32_t pc1 = Read_ADC_Channel(ADC_CHANNEL_2);  // PC1
-
-        UART_Printf("PC0=%4lu  PC1=%4lu  ", pc0, pc1);
-
-        // Interpret the values
-        if (pc0 < 500) UART_Printf("[PC0 LOW/PRESSED]  ");
-        else if (pc0 > 3500) UART_Printf("[PC0 HIGH]  ");
-        else UART_Printf("[PC0 FLOATING]  ");
-
-        if (pc1 < 500) UART_Printf("[PC1 LOW/PRESSED]");
-        else if (pc1 > 3500) UART_Printf("[PC1 HIGH]");
-        else UART_Printf("[PC1 FLOATING]");
-
-        UART_Printf("\r\n");
-        HAL_Delay(500);
-    }
-}
-
-void Test_With_Hardware(void) {
-    UART_Printf("Press buttons to test!\r\n");
-
-    while(1) {
-        uint32_t pc0 = Read_ADC_Channel(ADC_CHANNEL_1);
-        uint32_t pc1 = Read_ADC_Channel(ADC_CHANNEL_2);
-
-        if (pc0 < 100) {
-            UART_Printf("BUTTON 1 PRESSED! ");
-        }
-        if (pc1 < 100) {
-            UART_Printf("BUTTON 2 PRESSED! ");
-        }
-        if (pc0 > 3000 && pc1 > 3000) {
-            UART_Printf("Both released (pull-ups working)");
-        }
-
-        UART_Printf(" [PC0=%4lu PC1=%4lu]\r\n", pc0, pc1);
-        HAL_Delay(200);
-    }
-}
 
 // UART Printf implementation
 void UART_Printf(const char* format, ...)
@@ -242,25 +255,33 @@ int main(void)
   UART_Printf("ADC1: Calibrated and ready\r\n");
   UART_Printf("=================================\r\n");
 
-  // Uncomment to test ADC
-  // Test_ADC_Pins();  // This runs forever for testing
+ // HAL_UART_Receive_IT(&huart1, &uart_rx, 1);
+ // Command_Handler_Init();
 
-	#ifdef RUN_UNIT_TESTS
-	// Run unit tests instead of game
-	extern void Run_Collision_Tests(void);
-	extern void Run_Obstacle_Tests(void);
-	Run_Collision_Tests();
-	Run_Obstacle_Tests();
-
-	// Stop here after tests
-	while(1) {
-		HAL_Delay(1000);
-	}
+  #ifdef RUN_UNIT_TESTS
+	Run_All_Unit_Tests();
+	while(1) { HAL_Delay(1000); }
 	#else
-		// Normal game code
 		Game_Init();
-	#endif
-	/* USER CODE END 2 */
+  #endif
+  /* USER CODE END 2 */
+
+  /* Initialize led */
+  BSP_LED_Init(LED_GREEN);
+
+  /* Initialize USER push-button, will be used to trigger an interrupt each time it's pressed.*/
+  BSP_PB_Init(BUTTON_USER, BUTTON_MODE_EXTI);
+
+  /* Initialize COM1 port (115200, 8 bits (7-bit data + 1 stop bit), no parity */
+  BspCOMInit.BaudRate   = 115200;
+  BspCOMInit.WordLength = COM_WORDLENGTH_8B;
+  BspCOMInit.StopBits   = COM_STOPBITS_1;
+  BspCOMInit.Parity     = COM_PARITY_NONE;
+  BspCOMInit.HwFlowCtl  = COM_HWCONTROL_NONE;
+  if (BSP_COM_Init(COM1, &BspCOMInit) != BSP_ERROR_NONE)
+  {
+    Error_Handler();
+  }
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
@@ -517,12 +538,12 @@ static void MX_SPI3_Init(void)
   hspi3.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi3.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi3.Init.NSS = SPI_NSS_SOFT;
-  hspi3.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+  hspi3.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256;
   hspi3.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi3.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi3.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
   hspi3.Init.CRCPolynomial = 0x7;
-  hspi3.Init.NSSPMode = SPI_NSS_PULSE_ENABLE;
+  hspi3.Init.NSSPMode = SPI_NSS_PULSE_DISABLE;
   hspi3.Init.NSSPolarity = SPI_NSS_POLARITY_LOW;
   hspi3.Init.FifoThreshold = SPI_FIFO_THRESHOLD_01DATA;
   hspi3.Init.MasterSSIdleness = SPI_MASTER_SS_IDLENESS_00CYCLE;
@@ -567,7 +588,25 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin : PB0 */
+  GPIO_InitStruct.Pin = GPIO_PIN_0;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PB10 */
+  GPIO_InitStruct.Pin = GPIO_PIN_10;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  GPIO_InitStruct.Alternate = GPIO_AF7_USART3;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PC9 */
   GPIO_InitStruct.Pin = GPIO_PIN_9;
@@ -589,14 +628,7 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 // UART interrupt callback
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
-{
-    if(huart->Instance == USART1)
-    {
-        //Game_HandleButton();  // Uncomment if needed
-        HAL_UART_Receive_IT(&huart1, &uart_rx, 1);
-    }
-}
+
 /* USER CODE END 4 */
 
 /**
