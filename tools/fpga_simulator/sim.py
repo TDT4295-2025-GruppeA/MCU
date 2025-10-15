@@ -169,9 +169,11 @@ def handle_reset():
 def create_scene():
     global info_label
     scene.title = "MCU -> FPGA Simulator (visualizer)"
-    scene.width = 1000
-    scene.height = 700
-    scene.center = vector(0, 0, 20)
+    scene.width = 1200
+    scene.height = 900
+    scene.center = vector(0, 8, 12)
+    scene.forward = vector(0, -0.25, -1)
+    scene.autoscale = False
     scene.background = color.gray(0.2)
     info_label = label(pos=vector(-40, 30, 0), text="", height=16, box=False)
     # Ensure object lists are empty at start
