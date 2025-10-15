@@ -223,9 +223,14 @@ static void Move_Player(float delta_x)
 
 static void Update_GameLogic(float delta_time)
 {
-    // Move forward
+    // Move obstacles forward instead of player
     if(game_state.moving_forward) {
-        game_state.player_pos.z += FORWARD_SPEED * delta_time;
+        Obstacle* obstacles = Obstacles_GetArray();
+        for(int i = 0; i < MAX_OBSTACLES; i++) {
+            if(obstacles[i].active) {
+                obstacles[i].pos.z -= FORWARD_SPEED * delta_time;
+            }
+        }
     }
 
     // Update obstacles
@@ -270,16 +275,14 @@ static void Render_Frame(void)
 
     for(int i = 0; i < MAX_OBSTACLES && instances_sent < 15; i++) {  // FPGA limit
         if(obstacles[i].active) {
-            // Calculate relative position (camera-space)
-            Position relative_pos = obstacles[i].pos;
-            relative_pos.z -= game_state.player_pos.z;
-
+            // Obstacles are now in world coordinates, player is at z=0
+            Position world_pos = obstacles[i].pos;
             // Only send if visible
-            if(relative_pos.z > -20 && relative_pos.z < 150) {
-                float rel_pos_arr[3] = { relative_pos.x, relative_pos.y, relative_pos.z };
+            // if(world_pos.z > -150 && world_pos.z < -5) {
+                float rel_pos_arr[3] = { world_pos.x, world_pos.y, -world_pos.z };
                 SPI_AddModelInstance(obstacles[i].shape_id, rel_pos_arr, identity_rot);
                 instances_sent++;
-            }
+            // }
         }
     }
 
