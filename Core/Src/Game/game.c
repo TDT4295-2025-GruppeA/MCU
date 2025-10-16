@@ -7,6 +7,7 @@
 #include "buttons.h"
 #include "main.h"
 #include <string.h>
+#include <stdint.h>
 
 // External handles from main.c
 extern SPI_HandleTypeDef hspi1;
@@ -41,11 +42,36 @@ void Game_Init(void)
     Buttons_Init();
     Shapes_Init();
     Obstacles_Init();
-    // Send shapes to FPGA
-    UART_Printf("Sending shapes to FPGA...\r\n");
-    // SPI_SendShapeToFPGA(Shapes_GetPlayer());
-    // SPI_SendShapeToFPGA(Shapes_GetCube());
-    // SPI_SendShapeToFPGA(Shapes_GetCone());
+
+    // Upload shapes to FPGA/simulator with dynamic IDs
+    UART_Printf("Uploading shapes to FPGA/simulator...\r\n");
+    Shape3D* shapes[] = { Shapes_GetPlayer(), Shapes_GetCube(), Shapes_GetCone() };
+    const int num_shapes = sizeof(shapes);
+    for (uint8_t i = 0; i < num_shapes; ++i) {
+        shapes[i]->id = i; // Assign dynamic ID
+        SPI_BeginUpload();
+        for (uint8_t t = 0; t < shapes[i]->triangle_count; ++t) {
+            const Triangle* tri = &shapes[i]->triangles[t];
+            float v0[3] = {
+                shapes[i]->vertices[tri->v1].x,
+                shapes[i]->vertices[tri->v1].y,
+                shapes[i]->vertices[tri->v1].z
+            };
+            float v1[3] = {
+                shapes[i]->vertices[tri->v2].x,
+                shapes[i]->vertices[tri->v2].y,
+                shapes[i]->vertices[tri->v2].z
+            };
+            float v2[3] = {
+                shapes[i]->vertices[tri->v3].x,
+                shapes[i]->vertices[tri->v3].y,
+                shapes[i]->vertices[tri->v3].z
+            };
+            SPI_UploadTriangle(shapes[i]->id, v0, v1, v2);
+        }
+    }
+// Upload a shape to the FPGA/simulator using dynamic ID assignment
+
 
     // Initialize game state
     Game_Reset();
