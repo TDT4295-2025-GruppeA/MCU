@@ -85,7 +85,7 @@ uint8_t SPI_BeginUpload(void)
 
     if(hspi == NULL) {
         #ifdef SIM_UART
-        SIM_UART_TransmitPacket(&cmd, 1);
+        SPI_TransmitPacket(&cmd, 1);
         #endif
         return 0;
     }
