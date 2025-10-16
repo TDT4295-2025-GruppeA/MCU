@@ -4,7 +4,9 @@ import struct
 import threading
 import time
 
-from vpython import box, vector, color, rate, scene, label
+from vpython import box, vector, color, rate, scene, label, vertex, faces, compound
+# Toggle: use custom shapes (triangle mesh) or legacy box rendering
+USE_CUSTOM_SHAPES = True
 
 try:
     import serial
@@ -29,8 +31,13 @@ UART_PREFIX = b"Sending SPI message: "
 UART_SUFFIX = b"SPI message end"
 
 
+
 # Shared state
 lock = threading.Lock()
+# Shape registry: shape_id -> list of triangles (each triangle: [v0, v1, v2])
+shape_registry = {}  # dynamic shape definitions
+current_upload_id = None
+current_upload_tris = []
 # Store high-level instance descriptors in staging; actual VPython objects live in obs_objs
 obs_objs = []  # currently visible VPython objects
 staging_objs = []  # descriptors for next frame: dicts with keys: id, pos, rot
@@ -100,10 +107,27 @@ def serial_thread(port, baud):
                     dbg(f"[SPI] Received: UNKNOWN (0x{cmd:02X})")
 
 def handle_begin_upload():
-    dbg("Begin Upload (not used)")
+    global current_upload_id, current_upload_tris
+    # Assign next available shape ID
+    current_upload_id = len(shape_registry)
+    current_upload_tris = []
+    dbg(f"Begin Upload: shape_id={current_upload_id}")
 
 def handle_upload_triangle(packet):
-    dbg("Upload Triangle (not used)")
+    global current_upload_tris
+    # Parse triangle: color (2), v0 (12), v1 (12), v2 (12)
+    # We ignore color for now
+    v0 = [int.from_bytes(packet[2:6], 'big', signed=True) / 65536.0,
+        int.from_bytes(packet[6:10], 'big', signed=True) / 65536.0,
+        int.from_bytes(packet[10:14], 'big', signed=True) / 65536.0]
+    v1 = [int.from_bytes(packet[14:18], 'big', signed=True) / 65536.0,
+        int.from_bytes(packet[18:22], 'big', signed=True) / 65536.0,
+        int.from_bytes(packet[22:26], 'big', signed=True) / 65536.0]
+    v2 = [int.from_bytes(packet[26:30], 'big', signed=True) / 65536.0,
+        int.from_bytes(packet[30:34], 'big', signed=True) / 65536.0,
+        int.from_bytes(packet[34:38], 'big', signed=True) / 65536.0]
+    current_upload_tris.append((v0, v1, v2))
+    dbg(f"Upload Triangle: v0={v0}, v1={v1}, v2={v2}")
 
 def handle_add_model_instance(packet):
     model_id = packet[2]
@@ -129,8 +153,15 @@ def handle_frame_start():
 
 def handle_frame_end():
     dbg("Frame End")
+    global current_upload_id, current_upload_tris
     with lock:
-        # Rebuild VPython objects from staging descriptors
+        # If we just finished a shape upload, store it
+        if current_upload_id is not None and current_upload_tris:
+            shape_registry[current_upload_id] = list(current_upload_tris)
+            dbg(f"Registered shape_id={current_upload_id} with {len(current_upload_tris)} triangles")
+            current_upload_id = None
+            current_upload_tris = []
+
         # Hide and clear existing objects
         for ob in obs_objs:
             try:
@@ -139,18 +170,39 @@ def handle_frame_end():
                 pass
         obs_objs.clear()
 
+
         # Create VPython objects for each descriptor
         for desc in staging_objs:
             mid = desc.get('id', 0)
             p = desc.get('pos', [0,0,0])
-            # Choose color based on model id
-            col = color.green if mid == 0 else color.red
-            try:
-                box_obj = box(pos=vector(p[0], p[1], p[2]), size=vector(4,4,4), color=col, visible=True)
-                obs_objs.append(box_obj)
-            except Exception:
-                # If VPython isn't available in this thread, skip creation
-                pass
+            rot = desc.get('rot', [1,0,0,0,1,0,0,0,1])
+            tris = shape_registry.get(mid)
+            if USE_CUSTOM_SHAPES and tris:
+                # Build mesh from triangles
+                vlist = []
+                flist = []
+                for tri in tris:
+                    idx = len(vlist)
+                    vlist.append(vertex(pos=vector(*tri[0]), color=color.white))
+                    vlist.append(vertex(pos=vector(*tri[1]), color=color.white))
+                    vlist.append(vertex(pos=vector(*tri[2]), color=color.white))
+                    flist.append(faces(vs=[idx, idx+1, idx+2]))
+                try:
+                    mesh = faces(vertices=vlist, faces=flist)
+                    # Move mesh to instance position
+                    mesh.pos = vector(p[0], p[1], p[2])
+                    mesh.color = color.green if mid == 0 else color.red
+                    obs_objs.append(mesh)
+                except Exception:
+                    pass
+            else:
+                # Legacy: draw a box at the shape position
+                try:
+                    col = color.green if mid == 0 else color.red
+                    box_obj = box(pos=vector(p[0], p[1], p[2]), size=vector(4,4,4), color=col, visible=True)
+                    obs_objs.append(box_obj)
+                except Exception:
+                    pass
 
         # Clear staging descriptors after swapping
         staging_objs.clear()
