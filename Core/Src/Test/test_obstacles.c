@@ -2,6 +2,7 @@
 #include "./Game/obstacles.h"
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
 
 // Test 1: Initialization creates correct number of obstacles
 uint8_t test_obstacles_init(void) {

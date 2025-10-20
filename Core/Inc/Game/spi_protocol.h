@@ -1,10 +1,3 @@
-/*
- * spi_protocol.h
- *
- *  Created on: Sep 15, 2025
- *      Author: jornik
- */
-
 // spi_protocol.h - SPI communication protocol with FPGA
 #ifndef SPI_PROTOCOL_H
 #define SPI_PROTOCOL_H
