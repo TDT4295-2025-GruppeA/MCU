@@ -121,15 +121,15 @@ def handle_upload_triangle(packet):
     global current_upload_tris
     # Parse triangle: color (2), v0 (12), v1 (12), v2 (12)
     # We ignore color for now
-    v0 = [int.from_bytes(packet[2:6], 'big', signed=True) / 65536.0,
-        int.from_bytes(packet[6:10], 'big', signed=True) / 65536.0,
-        int.from_bytes(packet[10:14], 'big', signed=True) / 65536.0]
-    v1 = [int.from_bytes(packet[14:18], 'big', signed=True) / 65536.0,
-        int.from_bytes(packet[18:22], 'big', signed=True) / 65536.0,
-        int.from_bytes(packet[22:26], 'big', signed=True) / 65536.0]
-    v2 = [int.from_bytes(packet[26:30], 'big', signed=True) / 65536.0,
-        int.from_bytes(packet[30:34], 'big', signed=True) / 65536.0,
-        int.from_bytes(packet[34:38], 'big', signed=True) / 65536.0]
+    v0 = [int.from_bytes(packet[3:7], 'big', signed=True) / 65536.0,
+        int.from_bytes(packet[7:11], 'big', signed=True) / 65536.0,
+        int.from_bytes(packet[11:15], 'big', signed=True) / 65536.0]
+    v1 = [int.from_bytes(packet[15:19], 'big', signed=True) / 65536.0,
+        int.from_bytes(packet[19:23], 'big', signed=True) / 65536.0,
+        int.from_bytes(packet[23:27], 'big', signed=True) / 65536.0]
+    v2 = [int.from_bytes(packet[27:31], 'big', signed=True) / 65536.0,
+        int.from_bytes(packet[31:35], 'big', signed=True) / 65536.0,
+        int.from_bytes(packet[35:39], 'big', signed=True) / 65536.0]
     current_upload_tris.append((v0, v1, v2))
     dbg(f"Upload Triangle: v0={v0}, v1={v1}, v2={v2}")
 
