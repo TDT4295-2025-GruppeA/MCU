@@ -4,6 +4,9 @@ import struct
 import threading
 import time
 
+# Q16.16 fixed-point scale
+Q16_16_SCALE = 65536.0
+
 from vpython import box, vector, color, rate, scene, label, vertex, triangle
 # Toggle: use custom shapes (triangle mesh) or legacy box rendering
 USE_CUSTOM_SHAPES = True
@@ -122,27 +125,28 @@ def handle_upload_triangle(packet):
     global current_upload_tris
     # Parse triangle: color (2), v0 (12), v1 (12), v2 (12)
     # We ignore color for now
-    v0 = [int.from_bytes(packet[3:7], 'big', signed=True) / 65536.0,
-        int.from_bytes(packet[7:11], 'big', signed=True) / 65536.0,
-        int.from_bytes(packet[11:15], 'big', signed=True) / 65536.0]
-    v1 = [int.from_bytes(packet[15:19], 'big', signed=True) / 65536.0,
-        int.from_bytes(packet[19:23], 'big', signed=True) / 65536.0,
-        int.from_bytes(packet[23:27], 'big', signed=True) / 65536.0]
-    v2 = [int.from_bytes(packet[27:31], 'big', signed=True) / 65536.0,
-        int.from_bytes(packet[31:35], 'big', signed=True) / 65536.0,
-        int.from_bytes(packet[35:39], 'big', signed=True) / 65536.0]
+    v0 = [int.from_bytes(packet[3:7], 'big', signed=True) / Q16_16_SCALE,
+        int.from_bytes(packet[7:11], 'big', signed=True) / Q16_16_SCALE,
+        int.from_bytes(packet[11:15], 'big', signed=True) / Q16_16_SCALE]
+    v1 = [int.from_bytes(packet[15:19], 'big', signed=True) / Q16_16_SCALE,
+        int.from_bytes(packet[19:23], 'big', signed=True) / Q16_16_SCALE,
+        int.from_bytes(packet[23:27], 'big', signed=True) / Q16_16_SCALE]
+    v2 = [int.from_bytes(packet[27:31], 'big', signed=True) / Q16_16_SCALE,
+        int.from_bytes(packet[31:35], 'big', signed=True) / Q16_16_SCALE,
+        int.from_bytes(packet[35:39], 'big', signed=True) / Q16_16_SCALE]
     current_upload_tris.append((v0, v1, v2))
     dbg(f"Upload Triangle: v0={v0}, v1={v1}, v2={v2}")
 
 def handle_add_model_instance(packet):
     model_id = packet[2]
     # positions (3 x int32 Q16.16)
-    pos = [int.from_bytes(packet[3:7], 'big', signed=True) / 65536.0,
-           int.from_bytes(packet[7:11], 'big', signed=True) / 65536.0,
-           int.from_bytes(packet[11:15], 'big', signed=True) / 65536.0]
+
+    pos = [int.from_bytes(packet[3:7], 'big', signed=True) / Q16_16_SCALE,
+        int.from_bytes(packet[7:11], 'big', signed=True) / Q16_16_SCALE,
+        int.from_bytes(packet[11:15], 'big', signed=True) / Q16_16_SCALE]
 
     # rotations (9 x int32 Q16.16)
-    rot = [int.from_bytes(packet[15 + i*4:19 + i*4], 'big', signed=True) / 65536.0 for i in range(9)]
+    rot = [int.from_bytes(packet[15 + i*4:19 + i*4], 'big', signed=True) / Q16_16_SCALE for i in range(9)]
 
     dbg(f"Add Model Instance: id={model_id} pos={pos} rot={rot}")
     # Append a descriptor to staging; actual VPython objects are created on frame end in the main thread
