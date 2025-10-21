@@ -52,13 +52,13 @@ def dbg(*args, **kwargs):
 def serial_thread(port, baud):
     global player_pos, obstacles
     if serial is None:
-        print("pyserial not installed")
+        dbg("pyserial not installed")
         return
     try:
         ser = serial.Serial(port, baud, timeout=0.1)
         dbg(f"Opened serial {port} @ {baud}")
     except SerialException as e:
-        print("Failed to open serial:", e)
+        dbg("Failed to open serial: %s" % e)
         return
 
     text_buf = b""
@@ -66,7 +66,7 @@ def serial_thread(port, baud):
         try:
             data = ser.read(64)
         except SerialException:
-            print("Serial read error, exiting thread")
+            dbg("Serial read error, exiting thread")
             break
         if data:
             # dbg(f"[SERIAL] Raw data received: {data.hex()}")
@@ -81,17 +81,18 @@ def serial_thread(port, baud):
                 spi_data = text_buf[start + len(UART_PREFIX):end]
                 # dbg(f"[SERIAL] SPI message extracted: {spi_data.hex()}")
                 text_buf = text_buf[end + len(UART_SUFFIX):]
-                # Assume only one command per SPI message
+                # Print SPI message length and hex for every message (debug only)
+                dbg(f"[SPI RAW] len={len(spi_data)} hex={spi_data.hex()}")
                 if len(spi_data) == 0:
                     continue
                 cmd = spi_data[0]
                 if cmd == CMD_BEGIN_UPLOAD:
                     dbg("[SPI] Received: BEGIN_UPLOAD (0xA0)")
                     handle_begin_upload()
-                elif cmd == CMD_UPLOAD_TRIANGLE and len(spi_data) >= SIZE_UPLOAD_TRIANGLE:
+                elif cmd == CMD_UPLOAD_TRIANGLE:
                     dbg(f"[SPI] Received: UPLOAD_TRIANGLE (0xA1) - data: {spi_data[:SIZE_UPLOAD_TRIANGLE].hex()}")
                     handle_upload_triangle(spi_data[:SIZE_UPLOAD_TRIANGLE])
-                elif cmd == CMD_ADD_MODEL_INSTANCE and len(spi_data) >= SIZE_ADD_MODEL_INSTANCE:
+                elif cmd == CMD_ADD_MODEL_INSTANCE:
                     dbg(f"[SPI] Received: ADD_MODEL_INSTANCE (0xB0) - data: {spi_data[:SIZE_ADD_MODEL_INSTANCE].hex()}")
                     handle_add_model_instance(spi_data[:SIZE_ADD_MODEL_INSTANCE])
                 elif cmd == CMD_FRAME_START:
