@@ -111,7 +111,7 @@ uint8_t SPI_BeginUpload(void)
 // Upload triangle (0xA1): Color (2 bytes), V0 (3x Q16.16), V1 (3x Q16.16), V2 (3x Q16.16)
 void SPI_UploadTriangle(uint16_t color, float v0[3], float v1[3], float v2[3])
 {
-    uint8_t packet[1 + 2 + 12 + 12 + 12]; // 1 + color + 3*4*3
+    uint8_t packet[41]; // 1 + 2 + 12 + 12 + 12 = 41 bytes
     uint16_t idx = 0;
     packet[idx++] = 0xA1;
     pack_be16(&packet[idx], color); idx += 2;
@@ -129,7 +129,7 @@ void SPI_UploadTriangle(uint16_t color, float v0[3], float v1[3], float v2[3])
     tmp = to_q16_16(v2[1]); pack_be32(&packet[idx], tmp); idx += 4;
     tmp = to_q16_16(v2[2]); pack_be32(&packet[idx], tmp); idx += 4;
 
-    SPI_TransmitPacket(packet, idx);
+    SPI_TransmitPacket(packet, 41);
 }
 
 // Add model instance (0xB0): Reserved(1), Model ID(1), Position X/Y/Z (Q16.16), Rotation 3x3 (Q16.16)

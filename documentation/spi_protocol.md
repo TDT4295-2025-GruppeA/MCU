@@ -26,7 +26,7 @@ All messages are composed of a command byte followed by zero or more data bytes.
 |-------------------|--------|---------------------------------------------|---------------------------------|--------------------------------|
 | Reset             | 0x00   | Reset all registers to initial state        | [0x00]                         | None                           |
 | Begin Upload      | 0xA0   | Start model upload sequence                 | [0xA0]                         | [Object ID (uint8)]            |
-| Upload Triangle   | 0xA1   | Upload one triangle to current model        | [0xA1, Color, V0, V1, V2]      | None                           |
+| Upload Triangle   | 0xA1   | Upload one triangle to current model        | [0xA1, Color (2), V0 (12), V1 (12), V2 (12)] | None |
 | Add Model Instance| 0xB0   | Add model instance to scene                 | [0xB0, Model ID, Transform]     | None                           |
 | Mark Frame Start  | 0xF0   | Indicate start of frame rendering           | [0xF0]                         | None                           |
 | Mark Frame End    | 0xF1   | Indicate end of frame rendering             | [0xF1]                         | None                           |
@@ -37,15 +37,15 @@ All messages are composed of a command byte followed by zero or more data bytes.
 |---------------------|-------------------|---------------------|
 | Reset               | 1                 | Command: 1          |
 | Begin Upload        | 1                 | Command: 1          |
-| Upload Triangle     | 15                | Command: 1, Color: 2, Vertex 0: 4, Vertex 1: 4, Vertex 2: 4 |
-| Add Model Instance  | 44                | Command: 1, Reserved: 1, Model ID: 1, Position X/Y/Z: 4×3=12, Rotation XX/XY/XZ/YX/YY/YZ/ZX/ZY/ZZ: 4×9=36 |
+| Upload Triangle     | 41                | Command: 1, Color: 2, Vertex 0: 12, Vertex 1: 12, Vertex 2: 12 |
+| Add Model Instance  | 51                | Command: 1, Reserved: 1, Model ID: 1, Position X/Y/Z: 4×3=12, Rotation XX/XY/XZ/YX/YY/YZ/ZX/ZY/ZZ: 4×9=36 |
 | Mark Frame Start    | 1                 | Command: 1          |
 | Mark Frame End      | 1                 | Command: 1          |
 
 ### Field Definitions
 
 - **Color:** 2 bytes (format: 5 bits R, 5 bits G, 5 bits B, 1 bit reserved)
-- **Vertex (V0, V1, V2):** 4 bytes each (signed 32-bit fixed-point, Q16.16 format)
+- **Vertex (V0, V1, V2):** 12 bytes each (3 x signed 32-bit fixed-point, Q16.16 format)
 - **Model ID:** 1 byte
 - **Position (X, Y, Z):** 4 bytes each (signed 32-bit fixed-point, Q16.16 format)
 - **Rotation (XX, XY, XZ, YX, YY, YZ, ZX, ZY, ZZ):** 4 bytes each (signed 32-bit fixed-point, Q16.16 format)
