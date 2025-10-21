@@ -46,7 +46,7 @@ void Game_Init(void)
     // Upload shapes to FPGA/simulator with dynamic IDs
     UART_Printf("Uploading shapes to FPGA/simulator...\r\n");
     Shape3D* shapes[] = { Shapes_GetPlayer(), Shapes_GetCube(), Shapes_GetCone() };
-    const int num_shapes = sizeof(shapes);
+    const int num_shapes = sizeof(shapes) / sizeof(shapes[0]);
     for (uint8_t i = 0; i < num_shapes; ++i) {
         shapes[i]->id = i; // Assign dynamic ID
         SPI_BeginUpload();
@@ -67,7 +67,8 @@ void Game_Init(void)
                 shapes[i]->vertices[tri->v3].y,
                 shapes[i]->vertices[tri->v3].z
             };
-            SPI_UploadTriangle(shapes[i]->id, v0, v1, v2);
+            uint16_t color = 0x7FFF; // Default color (white, 5-5-5 RGB)
+            SPI_UploadTriangle(color, v0, v1, v2);
         }
     }
 // Upload a shape to the FPGA/simulator using dynamic ID assignment
