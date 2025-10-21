@@ -4,7 +4,7 @@ import struct
 import threading
 import time
 
-from vpython import box, vector, color, rate, scene, label, vertex, faces, compound
+from vpython import box, vector, color, rate, scene, label, vertex, triangle
 # Toggle: use custom shapes (triangle mesh) or legacy box rendering
 USE_CUSTOM_SHAPES = True
 
@@ -182,32 +182,31 @@ def handle_frame_end():
             p = desc.get('pos', [0,0,0])
             rot = desc.get('rot', [1,0,0,0,1,0,0,0,1])
             tris = shape_registry.get(mid)
+            dbg(f"Instance: shape_id={mid}, pos={p}, rot={rot}, tris={'yes' if tris else 'no'}")
             if USE_CUSTOM_SHAPES and tris:
-                # Build mesh from triangles
-                vlist = []
-                flist = []
+                # Render each triangle as a VPython triangle primitive
+                tri_objs = []
                 for tri in tris:
-                    idx = len(vlist)
-                    vlist.append(vertex(pos=vector(*tri[0]), color=color.white))
-                    vlist.append(vertex(pos=vector(*tri[1]), color=color.white))
-                    vlist.append(vertex(pos=vector(*tri[2]), color=color.white))
-                    flist.append(faces(vs=[idx, idx+1, idx+2]))
-                try:
-                    mesh = faces(vertices=vlist, faces=flist)
-                    # Move mesh to instance position
-                    mesh.pos = vector(p[0], p[1], p[2])
-                    mesh.color = color.green if mid == 0 else color.red
-                    obs_objs.append(mesh)
-                except Exception:
-                    pass
+                    try:
+                        tri_obj = triangle(
+                            v0=vertex(pos=vector(*tri[0]) + vector(p[0], p[1], p[2]), color=color.white),
+                            v1=vertex(pos=vector(*tri[1]) + vector(p[0], p[1], p[2]), color=color.white),
+                            v2=vertex(pos=vector(*tri[2]) + vector(p[0], p[1], p[2]), color=color.white)
+                        )
+                        tri_objs.append(tri_obj)
+                    except Exception as e:
+                        dbg(f"Error rendering triangle for shape_id={mid}: {e}")
+                obs_objs.extend(tri_objs)
+                dbg(f"Rendered {len(tri_objs)} triangles for shape_id={mid} at pos={p}")
             else:
                 # Legacy: draw a box at the shape position
                 try:
                     col = color.green if mid == 0 else color.red
                     box_obj = box(pos=vector(p[0], p[1], p[2]), size=vector(4,4,4), color=col, visible=True)
                     obs_objs.append(box_obj)
-                except Exception:
-                    pass
+                    dbg(f"Rendered box for shape_id={mid} at pos={p}")
+                except Exception as e:
+                    dbg(f"Error rendering box for shape_id={mid}: {e}")
 
         # Clear staging descriptors after swapping
         staging_objs.clear()
