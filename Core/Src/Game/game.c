@@ -45,7 +45,7 @@ void Game_Init(void)
 
     // Upload shapes to FPGA/simulator with dynamic IDs
     UART_Printf("Uploading shapes to FPGA/simulator...\r\n");
-    Shape3D* shapes[] = { Shapes_GetPlayer(), Shapes_GetCube(), Shapes_GetCone() };
+    Shape3D* shapes[] = { Shapes_GetPlayer(), Shapes_GetCube(), Shapes_GetCone(), Shapes_GetPyramid() };
     const int num_shapes = sizeof(shapes) / sizeof(shapes[0]);
     for (uint8_t i = 0; i < num_shapes; ++i) {
         shapes[i]->id = i; // Assign dynamic ID

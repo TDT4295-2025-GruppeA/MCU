@@ -14,6 +14,7 @@
 static Shape3D player_shape;
 static Shape3D cube_shape;
 static Shape3D cone_shape;
+static Shape3D pyramid_shape;
 static uint8_t shapes_initialized = 0;
 
 // Initialize all shapes
@@ -24,6 +25,7 @@ void Shapes_Init(void)
         Shapes_CreatePlayer(&player_shape);
         Shapes_CreateCube(&cube_shape);
         Shapes_CreateCone(&cone_shape);
+        Shapes_CreatePyramid(&pyramid_shape);
         shapes_initialized = 1;
     }
 }
@@ -206,4 +208,10 @@ Shape3D* Shapes_GetCone(void)
 {
     if(!shapes_initialized) Shapes_Init();
     return &cone_shape;
+}
+
+Shape3D* Shapes_GetPyramid(void)
+{
+    if(!shapes_initialized) Shapes_Init();
+    return &pyramid_shape;
 }
