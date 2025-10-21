@@ -107,7 +107,11 @@ def serial_thread(port, baud):
                     dbg(f"[SPI] Received: UNKNOWN (0x{cmd:02X})")
 
 def handle_begin_upload():
-    global current_upload_id, current_upload_tris
+    global current_upload_id, current_upload_tris, shape_registry
+    # If there is an unfinished upload, save it before starting a new one
+    if current_upload_id is not None and current_upload_tris:
+        dbg(f"[DEBUG] BeginUpload: Saving previous shape_id={current_upload_id} with {len(current_upload_tris)} triangles before new upload")
+        shape_registry[current_upload_id] = list(current_upload_tris)
     # Assign next available shape ID
     current_upload_id = len(shape_registry)
     current_upload_tris = []
@@ -146,22 +150,23 @@ def handle_add_model_instance(packet):
         staging_objs.append(desc)
 
 def handle_frame_start():
-    dbg("Frame Start")
-    with lock:
-        # Clear staging descriptors for new frame
-        staging_objs.clear()
-
-def handle_frame_end():
-    dbg("Frame End")
     global current_upload_id, current_upload_tris
+    dbg("Frame Start")
     with lock:
         # If we just finished a shape upload, store it
         if current_upload_id is not None and current_upload_tris:
             shape_registry[current_upload_id] = list(current_upload_tris)
             dbg(f"Registered shape_id={current_upload_id} with {len(current_upload_tris)} triangles")
+            for idx, tri in enumerate(current_upload_tris):
+                dbg(f"  Triangle {idx}: v0={tri[0]}, v1={tri[1]}, v2={tri[2]}")
             current_upload_id = None
             current_upload_tris = []
+        # Clear staging descriptors for new frame
+        staging_objs.clear()
 
+def handle_frame_end():
+    dbg("Frame End")
+    with lock:
         # Hide and clear existing objects
         for ob in obs_objs:
             try:
