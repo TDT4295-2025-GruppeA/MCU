@@ -114,7 +114,9 @@ def handle_begin_upload():
     global current_upload_id, current_upload_tris, shape_registry
     # If there is an unfinished upload, save it before starting a new one
     if current_upload_id is not None and current_upload_tris:
-        dbg(f"[DEBUG] BeginUpload: Saving previous shape_id={current_upload_id} with {len(current_upload_tris)} triangles before new upload")
+        print(f"[DEBUG] BeginUpload: Saving previous shape_id={current_upload_id} with {len(current_upload_tris)} triangles before new upload")
+        for idx, tri in enumerate(current_upload_tris):
+            print(f"[DEBUG]   Triangle {idx}: v0={tri[0]}, v1={tri[1]}, v2={tri[2]}")
         shape_registry[current_upload_id] = list(current_upload_tris)
     # Assign next available shape ID
     current_upload_id = len(shape_registry)
@@ -160,10 +162,10 @@ def handle_frame_start():
     with lock:
         # If we just finished a shape upload, store it
         if current_upload_id is not None and current_upload_tris:
-            shape_registry[current_upload_id] = list(current_upload_tris)
-            dbg(f"Registered shape_id={current_upload_id} with {len(current_upload_tris)} triangles")
+            print(f"[DEBUG] FrameStart: Saving shape_id={current_upload_id} with {len(current_upload_tris)} triangles")
             for idx, tri in enumerate(current_upload_tris):
-                dbg(f"  Triangle {idx}: v0={tri[0]}, v1={tri[1]}, v2={tri[2]}")
+                print(f"[DEBUG]   Triangle {idx}: v0={tri[0]}, v1={tri[1]}, v2={tri[2]}")
+            shape_registry[current_upload_id] = list(current_upload_tris)
             current_upload_id = None
             current_upload_tris = []
         # Clear staging descriptors for new frame
@@ -225,6 +227,11 @@ def handle_reset():
         for ob in staging_objs:
             ob.visible = False
         staging_objs.clear()
+        # Clear all uploaded shapes and uploads in progress
+        shape_registry.clear()
+        global current_upload_id, current_upload_tris
+        current_upload_id = None
+        current_upload_tris = []
 
 
 def create_scene():
