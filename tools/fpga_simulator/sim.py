@@ -113,11 +113,7 @@ def serial_thread(port, baud):
 def handle_begin_upload():
     global current_upload_id, current_upload_tris, shape_registry
     # If there is an unfinished upload, save it before starting a new one
-    if current_upload_id is not None and current_upload_tris:
-        print(f"[DEBUG] BeginUpload: Saving previous shape_id={current_upload_id} with {len(current_upload_tris)} triangles before new upload")
-        for idx, tri in enumerate(current_upload_tris):
-            print(f"[DEBUG]   Triangle {idx}: v0={tri[0]}, v1={tri[1]}, v2={tri[2]}")
-        shape_registry[current_upload_id] = list(current_upload_tris)
+    save_current_upload()
     # Assign next available shape ID
     current_upload_id = len(shape_registry)
     current_upload_tris = []
@@ -127,15 +123,9 @@ def handle_upload_triangle(packet):
     global current_upload_tris
     # Parse triangle: color (2), v0 (12), v1 (12), v2 (12)
     # We ignore color for now
-    v0 = [int.from_bytes(packet[3:7], 'big', signed=True) / Q16_16_SCALE,
-        int.from_bytes(packet[7:11], 'big', signed=True) / Q16_16_SCALE,
-        int.from_bytes(packet[11:15], 'big', signed=True) / Q16_16_SCALE]
-    v1 = [int.from_bytes(packet[15:19], 'big', signed=True) / Q16_16_SCALE,
-        int.from_bytes(packet[19:23], 'big', signed=True) / Q16_16_SCALE,
-        int.from_bytes(packet[23:27], 'big', signed=True) / Q16_16_SCALE]
-    v2 = [int.from_bytes(packet[27:31], 'big', signed=True) / Q16_16_SCALE,
-        int.from_bytes(packet[31:35], 'big', signed=True) / Q16_16_SCALE,
-        int.from_bytes(packet[35:39], 'big', signed=True) / Q16_16_SCALE]
+    v0 = parse_vertex(packet, 3)
+    v1 = parse_vertex(packet, 15)
+    v2 = parse_vertex(packet, 27)
     current_upload_tris.append((v0, v1, v2))
     dbg(f"Upload Triangle: v0={v0}, v1={v1}, v2={v2}")
 
@@ -143,12 +133,8 @@ def handle_add_model_instance(packet):
     model_id = packet[2]
     # positions (3 x int32 Q16.16)
 
-    pos = [int.from_bytes(packet[3:7], 'big', signed=True) / Q16_16_SCALE,
-        int.from_bytes(packet[7:11], 'big', signed=True) / Q16_16_SCALE,
-        int.from_bytes(packet[11:15], 'big', signed=True) / Q16_16_SCALE]
-
-    # rotations (9 x int32 Q16.16)
-    rot = [int.from_bytes(packet[15 + i*4:19 + i*4], 'big', signed=True) / Q16_16_SCALE for i in range(9)]
+    pos = parse_vertex(packet, 3)
+    rot = parse_rotation(packet, 15)
 
     dbg(f"Add Model Instance: id={model_id} pos={pos} rot={rot}")
     # Append a descriptor to staging; actual VPython objects are created on frame end in the main thread
@@ -161,13 +147,7 @@ def handle_frame_start():
     dbg("Frame Start")
     with lock:
         # If we just finished a shape upload, store it
-        if current_upload_id is not None and current_upload_tris:
-            print(f"[DEBUG] FrameStart: Saving shape_id={current_upload_id} with {len(current_upload_tris)} triangles")
-            for idx, tri in enumerate(current_upload_tris):
-                print(f"[DEBUG]   Triangle {idx}: v0={tri[0]}, v1={tri[1]}, v2={tri[2]}")
-            shape_registry[current_upload_id] = list(current_upload_tris)
-            current_upload_id = None
-            current_upload_tris = []
+        save_current_upload()
         # Clear staging descriptors for new frame
         staging_objs.clear()
 
@@ -195,11 +175,7 @@ def handle_frame_end():
                 tri_objs = []
                 for tri in tris:
                     try:
-                        tri_obj = triangle(
-                            v0=vertex(pos=vector(*tri[0]) + vector(p[0], p[1], p[2]), color=color.white),
-                            v1=vertex(pos=vector(*tri[1]) + vector(p[0], p[1], p[2]), color=color.white),
-                            v2=vertex(pos=vector(*tri[2]) + vector(p[0], p[1], p[2]), color=color.white)
-                        )
+                        tri_obj = create_vpython_triangle(tri, p)
                         tri_objs.append(tri_obj)
                     except Exception as e:
                         dbg(f"Error rendering triangle for shape_id={mid}: {e}")
@@ -209,7 +185,7 @@ def handle_frame_end():
                 # Legacy: draw a box at the shape position
                 try:
                     col = color.green if mid == 0 else color.red
-                    box_obj = box(pos=vector(p[0], p[1], p[2]), size=vector(4,4,4), color=col, visible=True)
+                    box_obj = create_vpython_box(p, col)
                     obs_objs.append(box_obj)
                     dbg(f"Rendered box for shape_id={mid} at pos={p}")
                 except Exception as e:
@@ -249,6 +225,42 @@ def create_scene():
         obs_objs.clear()
         staging_objs.clear()
     
+def save_current_upload():
+    global current_upload_id, current_upload_tris, shape_registry
+    if current_upload_id is not None and current_upload_tris:
+        print(f"[DEBUG] Saving shape_id={current_upload_id} with {len(current_upload_tris)} triangles")
+        for idx, tri in enumerate(current_upload_tris):
+            print(f"[DEBUG]   Triangle {idx}: v0={tri[0]}, v1={tri[1]}, v2={tri[2]}")
+        shape_registry[current_upload_id] = list(current_upload_tris)
+        current_upload_id = None
+        current_upload_tris = []
+        
+# Helper to parse Q16.16 fixed-point from bytes
+def parse_q16_16(b):
+    return int.from_bytes(b, 'big', signed=True) / Q16_16_SCALE
+
+# Helper to parse a vertex (3x Q16.16)
+def parse_vertex(packet, offset):
+    return [parse_q16_16(packet[offset + i*4:offset + (i+1)*4]) for i in range(3)]
+
+# Helper to parse a rotation matrix (9x Q16.16)
+def parse_rotation(packet, offset):
+    return [parse_q16_16(packet[offset + i*4:offset + (i+1)*4]) for i in range(9)]
+
+# Helper to create a VPython triangle from triangle data and position
+def create_vpython_triangle(tri, pos):
+    from vpython import vertex, vector, triangle, color
+    return triangle(
+        v0=vertex(pos=vector(*tri[0]) + vector(*pos), color=color.white),
+        v1=vertex(pos=vector(*tri[1]) + vector(*pos), color=color.white),
+        v2=vertex(pos=vector(*tri[2]) + vector(*pos), color=color.white)
+    )
+
+# Helper to create a VPython box from position and color
+def create_vpython_box(pos, col):
+    from vpython import box, vector
+    return box(pos=vector(*pos), size=vector(4,4,4), color=col, visible=True)
+
 
 # # keyboard handlers
 
