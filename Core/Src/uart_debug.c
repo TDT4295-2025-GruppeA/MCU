@@ -40,19 +40,6 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
     if(huart->Instance == USART1)
     {
-        if(uart_rx == '\r' || uart_rx == '\n') {
-            uart_command[uart_cmd_index] = '\0';
-            if(uart_cmd_index > 0) {
-                Process_UART_Command(uart_command);
-            }
-            uart_cmd_index = 0;
-            memset(uart_command, 0, sizeof(uart_command));
-        }
-        else if(uart_cmd_index < 63 && uart_rx >= 32) {
-            uart_command[uart_cmd_index++] = uart_rx;
-            HAL_UART_Transmit(&huart1, &uart_rx, 1, 10);  // Echo
-        }
-
         HAL_UART_Receive_IT(&huart1, &uart_rx, 1);
     }
 }

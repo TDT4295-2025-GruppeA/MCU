@@ -1,5 +1,5 @@
-// spi_protocol.c - SPI communication implementation
 #include "./Game/spi_protocol.h"
+#include "./Utilities/transform.h"
 #include <string.h>
 
 // External UART for debugging
@@ -86,15 +86,21 @@ void SPI_SendShape(Shape3D* shape)
                shape->id, idx, shape->vertex_count, shape->triangle_count);
 }
 
-void SPI_SendShapeToFPGA(Shape3D* shape) {
-    uint8_t begin_cmd = CMD_BEGIN_UPLOAD;
-    SPI_TransmitPacket(&begin_cmd, 1);
+// Updated: Now takes model_id as parameter
+void SPI_SendShapeToFPGA(uint8_t model_id, Shape3D* shape)
+{
+    // Begin upload now takes model ID as parameter
+    uint8_t begin_packet[2];
+    begin_packet[0] = CMD_BEGIN_UPLOAD;
+    begin_packet[1] = model_id;
+    SPI_TransmitPacket(begin_packet, 2);
 
+    // Upload triangles
     for(int i = 0; i < shape->triangle_count; i++) {
         uint8_t packet[39];
         packet[0] = CMD_UPLOAD_TRIANGLE;
-        packet[1] = 0xFF;
-        packet[2] = 0xFF;
+        packet[1] = 0xFF;  // RGB byte 1
+        packet[2] = 0xFF;  // RGB byte 2
 
         for(int v = 0; v < 3; v++) {
             uint8_t vertex_idx = (v == 0) ? shape->triangles[i].v1 :
@@ -125,20 +131,25 @@ void SPI_SendShapeToFPGA(Shape3D* shape) {
 
         SPI_TransmitPacket(packet, 39);
     }
+
+    UART_Printf("SPI: Uploaded model ID %d with %d triangles\r\n",
+                model_id, shape->triangle_count);
 }
 
-void SPI_AddModelInstance(uint8_t shape_id, Position* pos, float* rotation_matrix)
+// Updated: Now includes is_last_model parameter
+void SPI_AddModelInstance(uint8_t shape_id, Position* pos, float* rotation_matrix, uint8_t is_last_model)
 {
     uint8_t packet[51];
     memset(packet, 0, 51);
 
     packet[0] = CMD_ADD_INSTANCE;
-    packet[1] = 0x00;
+    packet[1] = is_last_model ? 0x01 : 0x00;  // Last model flag
     packet[2] = shape_id;
 
-    int32_t x_fixed = (int32_t)(pos->x * 65536.0f);
-    int32_t y_fixed = (int32_t)(pos->y * 65536.0f);
-    int32_t z_fixed = (int32_t)(pos->z * 65536.0f);
+    // Position in fixed-point
+    int32_t x_fixed = (int32_t)(pos->x * 65.5360f);
+    int32_t y_fixed = (int32_t)(pos->y * 65.5360f);
+    int32_t z_fixed = (int32_t)(pos->z * 65.5360f * 0);
 
     // Pack position
     packet[3] = (x_fixed >> 24) & 0xFF;
@@ -156,13 +167,22 @@ void SPI_AddModelInstance(uint8_t shape_id, Position* pos, float* rotation_matri
     packet[13] = (z_fixed >> 8) & 0xFF;
     packet[14] = z_fixed & 0xFF;
 
-    // Identity matrix if no rotation provided
-    if(rotation_matrix == NULL) {
+    // Pack rotation matrix (or identity if NULL)
+    if(rotation_matrix != NULL) {
+        // Use provided matrix
+        for(int i = 0; i < 9; i++) {
+            int32_t value = (int32_t)(rotation_matrix[i] * 65536.0f);
+            int offset = 15 + (i * 4);
+            packet[offset] = (value >> 24) & 0xFF;
+            packet[offset+1] = (value >> 16) & 0xFF;
+            packet[offset+2] = (value >> 8) & 0xFF;
+            packet[offset+3] = value & 0xFF;
+        }
+    } else {
+        // Identity matrix
         int32_t one = 65536;  // 1.0 in fixed point
         int32_t zero = 0;
 
-        // Pack identity matrix (diagonal = 1, rest = 0)
-        // This is a 3x3 matrix, so 9 values
         for(int i = 0; i < 9; i++) {
             int32_t value = (i == 0 || i == 4 || i == 8) ? one : zero;
             int offset = 15 + (i * 4);
@@ -174,13 +194,18 @@ void SPI_AddModelInstance(uint8_t shape_id, Position* pos, float* rotation_matri
     }
 
     SPI_TransmitPacket(packet, 51);
+
+    #ifdef DEBUG_SPI
+    UART_Printf("SPI: Added instance of model %d at [%d,%d,%d]%s\r\n",
+                    shape_id,
+                    (int)pos->x,
+                    (int)pos->y,
+                    (int)pos->z,
+                    is_last_model ? " (last model)" : "");
+    #endif
 }
 
-void SPI_BeginRender(void)
-{
-    uint8_t cmd = CMD_BEGIN_RENDER;  // 0xF0
-    SPI_TransmitPacket(&cmd, 1);
-}
+// REMOVED: SPI_BeginRender() - no longer needed
 
 // Send obstacle positions
 void SPI_SendObstacles(Obstacle* obstacles, uint8_t count)

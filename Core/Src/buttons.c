@@ -23,9 +23,6 @@ static uint8_t buttons_connected = 0;
 static uint32_t last_connection_check = 0;
 
 
-
-
-
 // Check if buttons are actually connected
 static uint8_t Check_Buttons_Connected(void)
 {

@@ -1,12 +1,3 @@
-/*
- * obstacles.c
- *
- *  Created on: Sep 15, 2025
- *      Author: jornik
- */
-
-
-// obstacles.c - Obstacle management implementation
 #include "./Game/obstacles.h"
 #include "./Game/shapes.h"
 #include <stdlib.h>
@@ -66,7 +57,7 @@ void Obstacles_Spawn(float z_position)
             obs->active = 1;
 
             // Randomly choose shape
-            int shape_type = rand() % 3;
+            int shape_type = rand() % 2;
             switch(shape_type)
             {
                 case 0:
@@ -105,7 +96,7 @@ void Obstacles_Spawn(float z_position)
 // Update obstacles
 void Obstacles_Update(float player_z, float delta_time)
 {
-    uint8_t need_spawn = 0;
+    //uint8_t need_spawn = 0;
     float furthest_z = player_z;
 
     for(int i = 0; i < MAX_OBSTACLES; i++)

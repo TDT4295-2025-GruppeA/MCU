@@ -43,7 +43,7 @@ uint8_t test_spawn_within_bounds(void) {
     return 1;
 }
 
-// Test 3: Obstacles despawn when passed
+// Test 3: Obstacles de-spawn when passed
 uint8_t test_obstacle_despawn(void) {
     Obstacles_Reset();
     Obstacles_SetAutoSpawn(0);  // Disable auto-spawn for this test
