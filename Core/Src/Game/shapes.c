@@ -40,17 +40,16 @@ void Shapes_CreatePlayer(Shape3D* shape)
     shape->triangle_count = 4;
 
     // Vertices for paper airplane
-    shape->vertices[0] = (Vertex3D){0, 0, 10};      // Nose
-    shape->vertices[1] = (Vertex3D){-10, 0, -5};    // Left wing tip
-    shape->vertices[2] = (Vertex3D){-3, -2, -5};    // Left wing bottom
-    shape->vertices[3] = (Vertex3D){10, 0, -5};     // Right wing tip
-    shape->vertices[4] = (Vertex3D){3, -2, -5};     // Right wing bottom
+    shape->vertices[0] = (Vertex3D){0, 0, -5};      // Nose
+    shape->vertices[1] = (Vertex3D){-2, 0, 0};    // Left wing tip
+    shape->vertices[2] = (Vertex3D){2, 0, 0};     // Right wing tip
+    shape->vertices[3] = (Vertex3D){0, 1, -1};     // Middle top
 
     // Triangles (two wings forming V shape)
-    shape->triangles[0] = (Triangle){0, 1, 2};  // Left wing
-    shape->triangles[1] = (Triangle){0, 2, 4};  // Center body
-    shape->triangles[2] = (Triangle){0, 4, 3};  // Right wing
-    shape->triangles[3] = (Triangle){2, 1, 3};  // Back face
+    shape->triangles[0] = (Triangle){0, 1, 3};  // Left wing
+    shape->triangles[1] = (Triangle){0, 2, 3};  // Center body
+    shape->triangles[2] = (Triangle){1, 2, 3};  // Right wing
+    // shape->triangles[3] = (Triangle){2, 1, 3};  // Back face
 }
 
 // Create cube shape
@@ -62,7 +61,7 @@ void Shapes_CreateCube(Shape3D* shape)
     shape->vertex_count = 8;
     shape->triangle_count = 12;
 
-    int16_t s = 8;  // Half-size
+    int16_t s = 2;  // Half-size
 
     // Define vertices
     shape->vertices[0] = (Vertex3D){-s, -s, -s};
