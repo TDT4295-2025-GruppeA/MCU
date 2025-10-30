@@ -1,4 +1,49 @@
+# Helper: frame start (clear staging, save shape upload)
+def frame_start():
+    global current_upload_id, current_upload_tris
+    dbg("Frame Start (helper)")
+    save_current_upload()
+    staging_objs.clear()
 
+# Helper: frame end (render all instances, clear staging)
+def frame_end():
+    dbg("Frame End (helper)")
+    dbg(f"[DEBUG] Clearing {len(obs_objs)} previous objects")
+    for ob in obs_objs:
+        try:
+            ob.visible = False
+        except Exception:
+            pass
+    obs_objs.clear()
+    dbg(f"[DEBUG] Rendering {len(staging_objs)} instances")
+    for desc in staging_objs:
+        mid = desc.get('id', 0)
+        p = desc.get('pos', [0,0,0])
+        rot = desc.get('rot', [1,0,0,0,1,0,0,0,1])
+        tris = shape_registry.get(mid)
+        dbg(f"[DEBUG] Instance: shape_id={mid}, pos={p}, rot={rot}, tris={'yes' if tris else 'no'}")
+        if USE_CUSTOM_SHAPES and tris:
+            tri_objs = []
+            for idx, tri in enumerate(tris):
+                v0, v1, v2, tri_color = tri
+                dbg(f"[DEBUG]   Triangle {idx}: v0={v0}, v1={v1}, v2={v2}, color={tri_color}, instance_pos={p}")
+                try:
+                    tri_obj = create_vpython_triangle(tri, p)
+                    tri_objs.append(tri_obj)
+                except Exception as e:
+                    dbg(f"Error rendering triangle for shape_id={mid}: {e}")
+            obs_objs.extend(tri_objs)
+            dbg(f"[DEBUG] Rendered {len(tri_objs)} triangles for shape_id={mid} at pos={p}")
+        else:
+            try:
+                col = color.green if mid == 0 else color.red
+                box_obj = create_vpython_box(p, col)
+                obs_objs.append(box_obj)
+                dbg(f"[DEBUG] Rendered box for shape_id={mid} at pos={p}")
+            except Exception as e:
+                dbg(f"Error rendering box for shape_id={mid}: {e}")
+    dbg(f"[DEBUG] Frame render complete. {len(obs_objs)} objects now visible.")
+    staging_objs.clear()
 import argparse
 import struct
 import threading
@@ -21,13 +66,13 @@ except Exception:
 CMD_RESET = 0x00
 CMD_BEGIN_UPLOAD = 0xA0
 CMD_UPLOAD_TRIANGLE = 0xA1
-CMD_ADD_MODEL_INSTANCE = 0xB0
+CMD_ADD_INSTANCE = 0xB0
 CMD_FRAME_START = 0xF0
 CMD_FRAME_END = 0xF1
 
 # SPI protocol packet sizes
-SIZE_UPLOAD_TRIANGLE = 41
-SIZE_ADD_MODEL_INSTANCE = 51
+SIZE_UPLOAD_TRIANGLE = 39
+SIZE_ADD_INSTANCE = 51
 
 # UART markers
 UART_PREFIX = b"Sending SPI message: "
@@ -91,13 +136,13 @@ def serial_thread(port, baud):
                 cmd = spi_data[0]
                 if cmd == CMD_BEGIN_UPLOAD:
                     dbg("[SPI] Received: BEGIN_UPLOAD (0xA0)")
-                    handle_begin_upload()
+                    handle_begin_upload(spi_data)
                 elif cmd == CMD_UPLOAD_TRIANGLE:
                     dbg(f"[SPI] Received: UPLOAD_TRIANGLE (0xA1) - data: {spi_data[:SIZE_UPLOAD_TRIANGLE].hex()}")
                     handle_upload_triangle(spi_data[:SIZE_UPLOAD_TRIANGLE])
-                elif cmd == CMD_ADD_MODEL_INSTANCE:
-                    dbg(f"[SPI] Received: ADD_MODEL_INSTANCE (0xB0) - data: {spi_data[:SIZE_ADD_MODEL_INSTANCE].hex()}")
-                    handle_add_model_instance(spi_data[:SIZE_ADD_MODEL_INSTANCE])
+                elif cmd == CMD_ADD_INSTANCE:
+                    dbg(f"[SPI] Received: ADD_INSTANCE (0xB0) - data: {spi_data[:SIZE_ADD_INSTANCE].hex()}")
+                    handle_add_instance(spi_data[:SIZE_ADD_INSTANCE])
                 elif cmd == CMD_FRAME_START:
                     dbg("[SPI] Received: FRAME_START (0xF0)")
                     handle_frame_start()
@@ -110,22 +155,12 @@ def serial_thread(port, baud):
                 else:
                     dbg(f"[SPI] Received: UNKNOWN (0x{cmd:02X})")
 
-def handle_begin_upload():
-    global current_upload_id, current_upload_tris, shape_registry
-    # If there is an unfinished upload, save it before starting a new one
-    save_current_upload()
-    # Assign next available shape ID
-    current_upload_id = len(shape_registry)
-    current_upload_tris = []
-    dbg(f"Begin Upload: shape_id={current_upload_id}")
+
 
 def handle_upload_triangle(packet):
     global current_upload_tris
     # Parse triangle: color (2), v0 (12), v1 (12), v2 (12)
-    # We ignore color for now
-    # Parse color (2 bytes, 5-5-5 RGB)
     color_val = int.from_bytes(packet[1:3], 'big')
-    # Convert 5-5-5 RGB to normalized VPython color
     r = ((color_val >> 10) & 0x1F) / 31.0
     g = ((color_val >> 5) & 0x1F) / 31.0
     b = (color_val & 0x1F) / 31.0
@@ -136,18 +171,32 @@ def handle_upload_triangle(packet):
     current_upload_tris.append((v0, v1, v2, tri_color))
     dbg(f"Upload Triangle: v0={v0}, v1={v1}, v2={v2}, color={tri_color}")
 
-def handle_add_model_instance(packet):
-    model_id = packet[2]
-    # positions (3 x int32 Q16.16)
 
+
+def handle_begin_upload(packet):
+    global current_upload_id, current_upload_tris, shape_registry
+    save_current_upload()
+    # Use model_id from packet[1] (sent by MCU)
+    model_id = packet[1]
+    current_upload_id = model_id
+    current_upload_tris = []
+    dbg(f"Begin Upload: shape_id={current_upload_id}")
+
+def handle_add_instance(packet):
+    is_last_model = packet[1] == 0x01
+    shape_id = packet[2]  # Sent by MCU, not incremented by sim
     pos = parse_vertex(packet, 3)
     rot = parse_rotation(packet, 15)
-
-    dbg(f"Add Model Instance: id={model_id} pos={pos} rot={rot}")
-    # Append a descriptor to staging; actual VPython objects are created on frame end in the main thread
-    desc = { 'id': model_id, 'pos': pos, 'rot': rot }
+    dbg(f"Add Instance: id={shape_id} pos={pos} rot={rot} is_last_model={is_last_model}")
+    # If this is the first instance in a new frame, call frame_start
+    if len(staging_objs) == 0:
+        frame_start()
+    desc = { 'id': shape_id, 'pos': pos, 'rot': rot }
     with lock:
         staging_objs.append(desc)
+        if is_last_model:
+            frame_end()
+
 
 def handle_frame_start():
     global current_upload_id, current_upload_tris

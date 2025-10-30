@@ -1,5 +1,5 @@
-// spi_protocol.c - SPI communication implementation
 #include "./Game/spi_protocol.h"
+#include "./Utilities/transform.h"
 #include <string.h>
 
 // External UART for debugging
@@ -74,103 +74,121 @@ void SPI_SendReset(void)
     uint8_t cmd = 0x00;
     SPI_TransmitPacket(&cmd, 1);
 }
-
-// Begin upload (0xA0) -> FPGA may respond with 1-byte object ID during/after transaction
-// This function attempts to read a single byte response if the SPI backend is available.
-// Returns 0 if no response is available or on timeout.
-uint8_t SPI_BeginUpload(void)
+// Updated: Now takes model_id as parameter
+void SPI_SendShapeToFPGA(uint8_t model_id, Shape3D* shape)
 {
-    uint8_t cmd = 0xA0;
-    uint8_t resp = 0;
+    // Begin upload now takes model ID as parameter
+    uint8_t begin_packet[2];
+    begin_packet[0] = CMD_BEGIN_UPLOAD;
+    begin_packet[1] = model_id;
+    SPI_TransmitPacket(begin_packet, 2);
 
-    if(hspi == NULL) {
-        #ifdef SIM_UART
-        SPI_TransmitPacket(&cmd, 1);
-        #endif
-        return 0;
+    // Upload triangles
+    for(int i = 0; i < shape->triangle_count; i++) {
+        uint8_t packet[39];
+        packet[0] = CMD_UPLOAD_TRIANGLE;
+        packet[1] = 0xFF;  // RGB byte 1
+        packet[2] = 0xFF;  // RGB byte 2
+
+        for(int v = 0; v < 3; v++) {
+            uint8_t vertex_idx = (v == 0) ? shape->triangles[i].v1 :
+                                (v == 1) ? shape->triangles[i].v2 :
+                                          shape->triangles[i].v3;
+
+            int32_t x = (int32_t)(shape->vertices[vertex_idx].x * 65536.0f);
+            int32_t y = (int32_t)(shape->vertices[vertex_idx].y * 65536.0f);
+            int32_t z = (int32_t)(shape->vertices[vertex_idx].z * 65536.0f);
+
+            int offset = 3 + (v * 12);
+            // Pack all three coordinates
+            packet[offset+0] = (x >> 24) & 0xFF;
+            packet[offset+1] = (x >> 16) & 0xFF;
+            packet[offset+2] = (x >> 8) & 0xFF;
+            packet[offset+3] = x & 0xFF;
+
+            packet[offset+4] = (y >> 24) & 0xFF;
+            packet[offset+5] = (y >> 16) & 0xFF;
+            packet[offset+6] = (y >> 8) & 0xFF;
+            packet[offset+7] = y & 0xFF;
+
+            packet[offset+8] = (z >> 24) & 0xFF;
+            packet[offset+9] = (z >> 16) & 0xFF;
+            packet[offset+10] = (z >> 8) & 0xFF;
+            packet[offset+11] = z & 0xFF;
+        }
+
+        SPI_TransmitPacket(packet, 39);
     }
 
-    HAL_GPIO_WritePin(SPI_CS_PORT, SPI_CS_PIN, GPIO_PIN_RESET);
-    HAL_SPI_Transmit(hspi, &cmd, 1, 100);
-    // Try to receive 1 byte response (non-blocking with timeout)
-    if(HAL_SPI_Receive(hspi, &resp, 1, 50) != HAL_OK) {
-        resp = 0;
-    }
-    HAL_GPIO_WritePin(SPI_CS_PORT, SPI_CS_PIN, GPIO_PIN_SET);
-
-    #ifdef SIM_UART
-    SPI_MirrorPacketToUART(&cmd, 1);
-    if(resp != 0) {
-        SPI_MirrorPacketToUART(&resp, 1);
-    }
-    #endif
-
-    return resp;
+    UART_Printf("SPI: Uploaded model ID %d with %d triangles\r\n",
+                model_id, shape->triangle_count);
 }
 
-// Upload triangle (0xA1): Color (2 bytes), V0 (3x Q16.16), V1 (3x Q16.16), V2 (3x Q16.16)
-void SPI_UploadTriangle(uint16_t color, float v0[3], float v1[3], float v2[3])
+// Updated: Now includes is_last_model parameter
+void SPI_AddModelInstance(uint8_t shape_id, Position* pos, float* rotation_matrix, uint8_t is_last_model)
 {
-    uint8_t packet[41]; // 1 + 2 + 12 + 12 + 12 = 41 bytes
-    uint16_t idx = 0;
-    packet[idx++] = 0xA1;
-    pack_be16(&packet[idx], color); idx += 2;
-
-    int32_t tmp;
-    tmp = to_q16_16(v0[0]); pack_be32(&packet[idx], tmp); idx += 4;
-    tmp = to_q16_16(v0[1]); pack_be32(&packet[idx], tmp); idx += 4;
-    tmp = to_q16_16(v0[2]); pack_be32(&packet[idx], tmp); idx += 4;
-
-    tmp = to_q16_16(v1[0]); pack_be32(&packet[idx], tmp); idx += 4;
-    tmp = to_q16_16(v1[1]); pack_be32(&packet[idx], tmp); idx += 4;
-    tmp = to_q16_16(v1[2]); pack_be32(&packet[idx], tmp); idx += 4;
-
-    tmp = to_q16_16(v2[0]); pack_be32(&packet[idx], tmp); idx += 4;
-    tmp = to_q16_16(v2[1]); pack_be32(&packet[idx], tmp); idx += 4;
-    tmp = to_q16_16(v2[2]); pack_be32(&packet[idx], tmp); idx += 4;
-
-    SPI_TransmitPacket(packet, 41);
-}
-
-// Add model instance (0xB0): Reserved(1), Model ID(1), Position X/Y/Z (Q16.16), Rotation 3x3 (Q16.16)
-void SPI_AddModelInstance(uint8_t model_id, float pos[3], float rot[9])
-{
-    /* packet layout:
-     * 1 byte opcode
-     * 1 byte reserved
-     * 1 byte model_id
-     * 3 * 4 bytes position (Q16.16)
-     * 9 * 4 bytes rotation (Q16.16)
-     * = 1 + 1 + 1 + 12 + 36 = 51 bytes
-     */
     uint8_t packet[51];
-    uint16_t idx = 0;
-    packet[idx++] = 0xB0;
-    packet[idx++] = 0x00; // reserved
-    packet[idx++] = model_id;
+    memset(packet, 0, 51);
 
-    pack_be32(&packet[idx], to_q16_16(pos[0])); idx += 4;
-    pack_be32(&packet[idx], to_q16_16(pos[1])); idx += 4;
-    pack_be32(&packet[idx], to_q16_16(pos[2])); idx += 4;
+    packet[0] = CMD_ADD_INSTANCE;
+    packet[1] = is_last_model ? 0x01 : 0x00;  // Last model flag
+    packet[2] = shape_id;
 
-    for(int i = 0; i < 9; ++i) {
-        pack_be32(&packet[idx], to_q16_16(rot[i])); idx += 4;
+    // Position in fixed-point
+    int32_t x_fixed = (int32_t)(pos->x * 65.5360f);
+    int32_t y_fixed = (int32_t)(pos->y * 65.5360f);
+    int32_t z_fixed = (int32_t)(pos->z * 65.5360f * 0);
+
+    // Pack position
+    packet[3] = (x_fixed >> 24) & 0xFF;
+    packet[4] = (x_fixed >> 16) & 0xFF;
+    packet[5] = (x_fixed >> 8) & 0xFF;
+    packet[6] = x_fixed & 0xFF;
+
+    packet[7] = (y_fixed >> 24) & 0xFF;
+    packet[8] = (y_fixed >> 16) & 0xFF;
+    packet[9] = (y_fixed >> 8) & 0xFF;
+    packet[10] = y_fixed & 0xFF;
+
+    packet[11] = (z_fixed >> 24) & 0xFF;
+    packet[12] = (z_fixed >> 16) & 0xFF;
+    packet[13] = (z_fixed >> 8) & 0xFF;
+    packet[14] = z_fixed & 0xFF;
+
+    // Pack rotation matrix (or identity if NULL)
+    if(rotation_matrix != NULL) {
+        // Use provided matrix
+        for(int i = 0; i < 9; i++) {
+            int32_t value = (int32_t)(rotation_matrix[i] * 65536.0f);
+            int offset = 15 + (i * 4);
+            packet[offset] = (value >> 24) & 0xFF;
+            packet[offset+1] = (value >> 16) & 0xFF;
+            packet[offset+2] = (value >> 8) & 0xFF;
+            packet[offset+3] = value & 0xFF;
+        }
+    } else {
+        // Identity matrix
+        int32_t one = 65536;  // 1.0 in fixed point
+        int32_t zero = 0;
+
+        for(int i = 0; i < 9; i++) {
+            int32_t value = (i == 0 || i == 4 || i == 8) ? one : zero;
+            int offset = 15 + (i * 4);
+            packet[offset] = (value >> 24) & 0xFF;
+            packet[offset+1] = (value >> 16) & 0xFF;
+            packet[offset+2] = (value >> 8) & 0xFF;
+            packet[offset+3] = value & 0xFF;
+        }
     }
 
-    SPI_TransmitPacket(packet, idx);
-}
+    SPI_TransmitPacket(packet, 51);
 
-// Mark frame start (0xF0)
-void SPI_MarkFrameStart(void)
-{
-    uint8_t cmd = 0xF0;
-    SPI_TransmitPacket(&cmd, 1);
+    #ifdef DEBUG_SPI
+    UART_Printf("SPI: Added instance of model %d at [%d,%d,%d]%s\r\n",
+                    shape_id,
+                    (int)pos->x,
+                    (int)pos->y,
+                    (int)pos->z,
+                    is_last_model ? " (last model)" : "");
+    #endif
 }
-
-// Mark frame end (0xF1)
-void SPI_MarkFrameEnd(void)
-{
-    uint8_t cmd = 0xF1;
-    SPI_TransmitPacket(&cmd, 1);
-}
-

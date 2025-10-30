@@ -1,10 +1,3 @@
-/*
- * fpga_spi.c
- *
- *  Created on: Sep 8, 2025
- *      Author: jornik
- */
-
 #include "fpga_spi.h"
 
 static SPI_HandleTypeDef* fpga_spi = NULL;
