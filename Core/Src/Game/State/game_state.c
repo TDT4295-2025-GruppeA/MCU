@@ -33,7 +33,7 @@ void StateManager_Reset(void)
     game_state_ptr->score = 0;
     game_state_ptr->moving_forward = 0;
     game_state_ptr->frame_count = 0;
-
+    game_state_ptr->total_distance = 0.0;
     score_multiplier = 1;
 
     // Reset subsystems

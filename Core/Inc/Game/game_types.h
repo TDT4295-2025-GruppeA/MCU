@@ -100,7 +100,7 @@ typedef struct {
     GameStateEnum state;
     uint32_t score;
     float next_spawn_z;
-
+    float total_distance;
     uint32_t game_start_time;  // Track when game started (for duration)
 } GameState;
 

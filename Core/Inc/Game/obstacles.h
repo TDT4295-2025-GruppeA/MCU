@@ -13,6 +13,7 @@ void Obstacles_Spawn(float z_position);
 void Obstacles_Clear(void);
 void Obstacles_Reset(void);
 void Obstacles_SetAutoSpawn(uint8_t enabled);
+void Obstacles_MoveTowardPlayer(float speed);
 
 // Getters
 Obstacle* Obstacles_GetArray(void);
