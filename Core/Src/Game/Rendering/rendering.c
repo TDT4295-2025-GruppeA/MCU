@@ -1,3 +1,4 @@
+//rendering.c
 #include "../../../Inc/Game/Rendering/rendering.h"
 #include "../../../Inc/Game/spi_protocol.h"
 #include "../../../Inc/Game/shapes.h"
@@ -32,65 +33,59 @@ void Renderer_DrawFrame(GameState* state)
 {
     if(!state) return;
 
-    // 1. Render player with banking effect
+    // 1. Render player at origin with banking
     Matrix3x3 player_rotation;
     float tilt_angle = state->player_pos.x * 0.01f;
     Matrix_RotateZ(&player_rotation, tilt_angle);
 
-    SPI_AddModelInstance(SHAPE_ID_PLAYER, &state->player_pos,
-                        player_rotation.m, 0);  // Not last model
+    Position player_render_pos = {state->player_pos.x, 0, 0};  // Z always 0
+    SPI_AddModelInstance(SHAPE_ID_PLAYER, &player_render_pos,
+                        player_rotation.m, 0);
 
-    // 2. Get obstacles and count visible ones
+    // 2. Count visible obstacles
     Obstacle* obstacles = Obstacles_GetArray();
     int visible_count = 0;
 
     for(int i = 0; i < MAX_OBSTACLES; i++) {
-        if(obstacles[i].active) {
-            float rel_z = obstacles[i].pos.z - state->player_pos.z;
-            if(rel_z > -20 && rel_z < 150) {
-                visible_count++;
-            }
+        if(obstacles[i].active &&
+           obstacles[i].pos.z > -20 && obstacles[i].pos.z < 150) {
+            visible_count++;
         }
     }
 
-    // 3. Render visible obstacles
+    // 3. Render obstacles (no relative position needed!)
     int rendered = 0;
     uint8_t is_last_model = 0;
 
     for(int i = 0; i < MAX_OBSTACLES && rendered < 15; i++) {
         if(!obstacles[i].active) continue;
 
-        // Calculate relative position for camera
-        Position relative_pos = obstacles[i].pos;
-        relative_pos.z -= state->player_pos.z;
-
         // Check if visible
-        if(relative_pos.z > -20 && relative_pos.z < 150) {
+        if(obstacles[i].pos.z > -20 && obstacles[i].pos.z < 150) {
             rendered++;
             is_last_model = (rendered >= visible_count || rendered >= 15) ? 1 : 0;
 
-            // Apply rotation based on shape type
+            // Apply rotation
             Matrix3x3 rotation;
             if(obstacles[i].shape_id == SHAPE_CUBE) {
                 float angle = (HAL_GetTick() * 0.001f) + (i * 0.5f);
                 Matrix_RotateY(&rotation, angle);
-            } else if(obstacles[i].shape_id == SHAPE_CONE) {
-                Matrix_RotateX(&rotation, 0.2f);
             } else {
                 Matrix_Identity(&rotation);
             }
 
-            SPI_AddModelInstance(obstacles[i].shape_id, &relative_pos,
+            // Send actual position (no relative calculation!)
+            SPI_AddModelInstance(obstacles[i].shape_id, &obstacles[i].pos,
                                rotation.m, is_last_model);
 
             if(is_last_model) break;
         }
     }
 
-    // 4. If no obstacles were rendered, send player again as last model
+    // 4. Fallback if no obstacles
     if(rendered == 0) {
-        SPI_AddModelInstance(SHAPE_ID_PLAYER, &state->player_pos,
-                           player_rotation.m, 1);  // Last model
+        SPI_AddModelInstance(SHAPE_ID_PLAYER, &player_render_pos,
+                           player_rotation.m, 1);
     }
 }
 

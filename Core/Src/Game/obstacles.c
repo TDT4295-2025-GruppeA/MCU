@@ -1,3 +1,4 @@
+//obstacles.h
 #include "./Game/obstacles.h"
 #include "./Game/shapes.h"
 #include <stdlib.h>
@@ -17,7 +18,7 @@ void Obstacles_Init(void)
 {
     Obstacles_Reset();
 
-    // Spawn initial obstacles
+    // Spawn initial obstacles ahead of player (positive Z)
     for(int i = 0; i < 3; i++)
     {
         Obstacles_Spawn(OBSTACLE_SPAWN_DIST + (i * OBSTACLE_SPACING));
@@ -93,25 +94,35 @@ void Obstacles_Spawn(float z_position)
     }
 }
 
+void Obstacles_MoveTowardPlayer(float speed)
+{
+    for(int i = 0; i < MAX_OBSTACLES; i++)
+    {
+        if(obstacle_pool[i].active)
+        {
+            obstacle_pool[i].pos.z -= speed;  // Move toward player (decrease Z)
+        }
+    }
+}
+
 // Update obstacles
 void Obstacles_Update(float player_z, float delta_time)
 {
-    //uint8_t need_spawn = 0;
-    float furthest_z = player_z;
+    float furthest_z = 0;  // Start at player position
 
     for(int i = 0; i < MAX_OBSTACLES; i++)
     {
         if(obstacle_pool[i].active)
         {
-            // Remove obstacles that are far behind player
-            if(obstacle_pool[i].pos.z < player_z - 30)
+            // Remove obstacles that have passed behind the player
+            if(obstacle_pool[i].pos.z < -30)  // Behind player
             {
                 obstacle_pool[i].active = 0;
                 obstacles_passed++;
                 UART_Printf("Obstacle passed! Total: %lu\r\n", obstacles_passed);
             }
 
-            // Track furthest obstacle
+            // Track furthest obstacle (highest Z value)
             if(obstacle_pool[i].pos.z > furthest_z)
             {
                 furthest_z = obstacle_pool[i].pos.z;
@@ -119,8 +130,8 @@ void Obstacles_Update(float player_z, float delta_time)
         }
     }
 
-    // Check if we need to spawn new obstacles
-    if(auto_spawn_enabled && furthest_z < player_z + OBSTACLE_SPAWN_DIST)
+    // Spawn new obstacles ahead when needed
+    if(auto_spawn_enabled && furthest_z < OBSTACLE_SPAWN_DIST)
     {
         next_spawn_z = furthest_z + OBSTACLE_SPACING + (rand() % 20);
         Obstacles_Spawn(next_spawn_z);

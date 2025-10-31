@@ -1,3 +1,4 @@
+//rendering.c
 #include "./Game/spi_protocol.h"
 #include "./Utilities/transform.h"
 #include <string.h>
@@ -137,7 +138,7 @@ void SPI_AddModelInstance(uint8_t shape_id, Position* pos, float* rotation_matri
     // Position in fixed-point
     int32_t x_fixed = (int32_t)(pos->x * 65.5360f);
     int32_t y_fixed = (int32_t)(pos->y * 65.5360f);
-    int32_t z_fixed = (int32_t)(pos->z * 65.5360f * 0);
+    int32_t z_fixed = (int32_t)(pos->z * 65.5360f);
 
     // Pack position
     packet[3] = (x_fixed >> 24) & 0xFF;

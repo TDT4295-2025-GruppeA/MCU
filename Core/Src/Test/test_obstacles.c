@@ -46,25 +46,25 @@ uint8_t test_spawn_within_bounds(void) {
 // Test 3: Obstacles de-spawn when passed
 uint8_t test_obstacle_despawn(void) {
     Obstacles_Reset();
-    Obstacles_SetAutoSpawn(0);  // Disable auto-spawn for this test
+    Obstacles_SetAutoSpawn(0);
 
-    // Spawn obstacle behind player
     Obstacles_Spawn(50);
     uint8_t initial_count = Obstacles_GetActiveCount();
     TEST_ASSERT(initial_count > 0, "Should have spawned obstacle");
 
-    // Simulate player moving far ahead
-    float player_z = 100;
-    Obstacles_Update(player_z, 0.1f);
+    for(int i = 0; i < 10; i++) {
+        Obstacles_MoveTowardPlayer(10.0f);  // Move 10 units per iteration
+    }
+    Obstacles_Update(0, 0.1f);
 
     uint8_t new_count = Obstacles_GetActiveCount();
     TEST_ASSERT(new_count < initial_count,
                "Obstacles behind player should despawn");
 
-    uint32_t passed = Obstacles_CheckPassed(player_z);
+    uint32_t passed = Obstacles_CheckPassed(0);
     TEST_ASSERT(passed > 0, "Should track passed obstacles");
 
-    Obstacles_SetAutoSpawn(1);  // Re-enable for other tests
+    Obstacles_SetAutoSpawn(1);
     return 1;
 }
 
@@ -72,23 +72,22 @@ uint8_t test_obstacle_despawn(void) {
 uint8_t test_auto_spawn_ahead(void) {
     Obstacles_Reset();
 
-    float player_z = 0;
-    Obstacles_Update(player_z, 0.1f);
+    Obstacles_Update(0, 0.1f);
     uint8_t initial_count = Obstacles_GetActiveCount();
 
-    // Move player forward significantly
-    player_z = OBSTACLE_SPAWN_DIST - 10;
-    Obstacles_Update(player_z, 0.1f);
+    for(int i = 0; i < 5; i++) {
+        Obstacles_MoveTowardPlayer(20.0f);
+        Obstacles_Update(0, 0.1f);
+    }
 
     uint8_t new_count = Obstacles_GetActiveCount();
     TEST_ASSERT(new_count >= initial_count,
-               "Should spawn new obstacles as player advances");
+               "Should spawn new obstacles as old ones approach");
 
-    // Check new obstacles are ahead
     Obstacle* obstacles = Obstacles_GetArray();
     int ahead_count = 0;
     for(int i = 0; i < MAX_OBSTACLES; i++) {
-        if(obstacles[i].active && obstacles[i].pos.z > player_z) {
+        if(obstacles[i].active && obstacles[i].pos.z > 0) {
             ahead_count++;
         }
     }

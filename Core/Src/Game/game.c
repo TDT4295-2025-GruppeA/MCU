@@ -1,3 +1,4 @@
+//game.c
 #include "../../Inc/Game/game.h"
 #include "../../Inc/Game/State/state_manager.h"
 #include "../../Inc/Game/Rendering/rendering.h"
