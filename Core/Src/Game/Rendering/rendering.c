@@ -33,15 +33,6 @@ void Renderer_DrawFrame(GameState* state)
 {
     if(!state) return;
 
-    // 1. Render player at origin with banking
-    Matrix3x3 player_rotation;
-    float tilt_angle = state->player_pos.x * 0.01f;
-    Matrix_RotateZ(&player_rotation, tilt_angle);
-
-    Position player_render_pos = {state->player_pos.x, 0, 0};  // Z always 0
-    SPI_AddModelInstance(SHAPE_ID_PLAYER, &player_render_pos,
-                        player_rotation.m, 0);
-
     // 2. Count visible obstacles
     Obstacle* obstacles = Obstacles_GetArray();
     int visible_count = 0;
@@ -76,17 +67,20 @@ void Renderer_DrawFrame(GameState* state)
 
             // Send actual position (no relative calculation!)
             SPI_AddModelInstance(obstacles[i].shape_id, &obstacles[i].pos,
-                               rotation.m, is_last_model);
+                               rotation.m, 0);
 
             if(is_last_model) break;
         }
     }
 
-    // 4. Fallback if no obstacles
-    if(rendered == 0) {
-        SPI_AddModelInstance(SHAPE_ID_PLAYER, &player_render_pos,
-                           player_rotation.m, 1);
-    }
+    // Render player at origin with banking
+    Matrix3x3 player_rotation;
+    float tilt_angle = state->player_pos.x * 0.01f;
+    Matrix_RotateZ(&player_rotation, tilt_angle);
+
+    Position player_render_pos = {state->player_pos.x, 0, 0};  // Z always 0
+    SPI_AddModelInstance(SHAPE_ID_PLAYER, &player_render_pos,
+                        player_rotation.m, 1);
 }
 
 void Renderer_ClearScene(void)
