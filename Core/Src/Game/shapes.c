@@ -50,6 +50,9 @@ void Shapes_CreatePlayer(Shape3D* shape)
     shape->triangles[1] = (Triangle){0, 2, 3};  // Center body
     shape->triangles[2] = (Triangle){1, 2, 3};  // Right wing
     // shape->triangles[3] = (Triangle){2, 1, 3};  // Back face
+
+    // Calculate and store bounds
+    Shapes_CalculateBounds(shape, &shape->width, &shape->height, &shape->depth);
 }
 
 // Create cube shape
@@ -92,6 +95,9 @@ void Shapes_CreateCube(Shape3D* shape)
     // Left face
     shape->triangles[10] = (Triangle){0, 4, 7};
     shape->triangles[11] = (Triangle){0, 7, 3};
+
+    // Calculate and store bounds
+    Shapes_CalculateBounds(shape, &shape->width, &shape->height, &shape->depth);
 }
 
 // Create cone shape
@@ -124,6 +130,9 @@ void Shapes_CreateCone(Shape3D* shape)
         int next = (i + 1) % 8;
         shape->triangles[i] = (Triangle){0, i+1, next+1};
     }
+
+    // Calculate and store bounds
+    Shapes_CalculateBounds(shape, &shape->width, &shape->height, &shape->depth);
 }
 
 // Create pyramid shape
@@ -153,6 +162,9 @@ void Shapes_CreatePyramid(Shape3D* shape)
     // Base triangles
     shape->triangles[4] = (Triangle){1, 3, 2};
     shape->triangles[5] = (Triangle){1, 4, 3};
+
+    // Calculate and store bounds
+    Shapes_CalculateBounds(shape, &shape->width, &shape->height, &shape->depth);
 }
 
 // Scale a shape by a factor
@@ -164,6 +176,8 @@ void Shapes_Scale(Shape3D* shape, float scale)
         shape->vertices[i].y = (int16_t)(shape->vertices[i].y * scale);
         shape->vertices[i].z = (int16_t)(shape->vertices[i].z * scale);
     }
+    // Recalculate bounds after scaling
+    Shapes_CalculateBounds(shape, &shape->width, &shape->height, &shape->depth);
 }
 
 // Calculate bounding box dimensions

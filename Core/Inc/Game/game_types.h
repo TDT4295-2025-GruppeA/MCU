@@ -66,6 +66,9 @@ typedef struct {
     uint8_t triangle_count;             // Number of triangles
     Vertex3D vertices[MAX_VERTICES];   // Vertex array
     Triangle triangles[MAX_TRIANGLES]; // Triangle array
+    float width;                        // Precomputed bounding box width
+    float height;                       // Precomputed bounding box height
+    float depth;                        // Precomputed bounding box depth
 } Shape3D;
 
 // ========== Game Objects ==========

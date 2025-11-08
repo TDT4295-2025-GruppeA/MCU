@@ -13,6 +13,9 @@ static Obstacle obstacle_pool[MAX_OBSTACLES];
 static float next_spawn_z;
 static uint32_t obstacles_passed;
 
+// Pre-calculated constants for efficiency
+static const int OBSTACLE_X_RANGE = WORLD_MAX_X - WORLD_MIN_X;
+
 // Initialize obstacle system
 void Obstacles_Init(void)
 {
@@ -57,33 +60,15 @@ void Obstacles_Spawn(float z_position)
             Obstacle* obs = &obstacle_pool[i];
             obs->active = 1;
 
-            // Randomly choose shape
-            int shape_type = rand() % 2;
-            switch(shape_type)
-            {
-                case 0:
-                    obs->shape_id = SHAPE_CUBE;
-                    obs->width = 16;
-                    obs->height = 16;
-                    obs->depth = 16;
-                    break;
-                case 1:
-                    obs->shape_id = SHAPE_CONE;
-                    obs->width = 16;
-                    obs->height = 25;
-                    obs->depth = 16;
-                    break;
-                case 2:
-                    obs->shape_id = SHAPE_PYRAMID;
-                    obs->width = 20;
-                    obs->height = 20;
-                    obs->depth = 20;
-                    break;
-            }
+            // Set obstacle properties using shape bounds
+            obs->shape_id = SHAPE_CUBE;
+            Shape3D* cube_shape = Shapes_GetCube();
+            obs->width = cube_shape->width;
+            obs->height = cube_shape->height;
+            obs->depth = cube_shape->depth;
 
             // Random X position within bounds
-            int x_range = WORLD_MAX_X - WORLD_MIN_X;
-            obs->pos.x = (float)(rand() % x_range) + WORLD_MIN_X;
+            obs->pos.x = (float)(rand() % OBSTACLE_X_RANGE) + WORLD_MIN_X;
             obs->pos.y = 0;
             obs->pos.z = z_position;
 
