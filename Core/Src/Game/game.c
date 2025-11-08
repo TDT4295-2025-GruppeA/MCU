@@ -31,6 +31,8 @@ void Game_Init(void)
     UART_Printf("Cubefield  \r\n");
     UART_Printf("=================================\r\n");
 
+    // srand(HAL_GetTick());
+
     // Initialize core systems
     Input_Init();
     Buttons_Init();
