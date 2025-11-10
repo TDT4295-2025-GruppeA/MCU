@@ -15,7 +15,7 @@ CollisionResult Collision_CheckPlayer(Position* player_pos, Obstacle* obstacles,
     // Check boundary collision
     if(player_pos->x < WORLD_MIN_X || player_pos->x > WORLD_MAX_X)
     {
-        result.type = COLLISION_BOUNDARY;
+    	result.type = COLLISION_BOUNDARY;
         return result;
     }
 

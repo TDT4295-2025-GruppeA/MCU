@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 // ========== Game Constants ==========
-#define UPDATE_INTERVAL 100      // ms between updates
+#define UPDATE_INTERVAL 25     // ms between updates
 #define FORWARD_SPEED   5.0f     // units per second
 #define STRAFE_SPEED    10       // units per strafe
 #define WORLD_MIN_X     -50
@@ -13,7 +13,7 @@
 // 3D Shape constants
 #define MAX_VERTICES    32       // Max vertices per shape
 #define MAX_TRIANGLES   16       // Max triangles per shape
-#define MAX_OBSTACLES   10       // Max obstacles on screen
+#define MAX_OBSTACLES   1       // Max obstacles on screen
 #define OBSTACLE_SPAWN_DIST 100  // Distance ahead to spawn obstacles
 #define OBSTACLE_SPACING 30      // Min spacing between obstacles
 
@@ -28,7 +28,7 @@ typedef enum {
 } SPI_Command;
 
 // ========== Shape IDs ==========
-// ADD: Aliases for compatibility with new code
+// Aliases for compatibility
 typedef enum {
     SHAPE_PLAYER = 0x00,
     SHAPE_CUBE   = 0x01,
@@ -101,7 +101,7 @@ typedef struct {
     uint32_t score;
     float next_spawn_z;
     float total_distance;
-    uint32_t game_start_time;  // Track when game started (for duration)
+    uint32_t game_start_time;  // Track when game started (duration)
 } GameState;
 
 // ========== Game Statistics ==========

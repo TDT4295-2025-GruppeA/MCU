@@ -68,18 +68,18 @@ void Obstacles_Spawn(float z_position)
                     obs->depth = 16;
                     break;
                 case 1:
-                    obs->shape_id = SHAPE_CONE;
-                    obs->width = 16;
-                    obs->height = 25;
-                    obs->depth = 16;
-                    break;
+                	obs->shape_id = SHAPE_CUBE;
+					obs->width = 16;
+					obs->height = 16;
+					obs->depth = 16;
+					break;
                 case 2:
-                    obs->shape_id = SHAPE_PYRAMID;
-                    obs->width = 20;
-                    obs->height = 20;
-                    obs->depth = 20;
-                    break;
-            }
+                	obs->shape_id = SHAPE_CUBE;
+					obs->width = 16;
+					obs->height = 16;
+					obs->depth = 16;
+					break;
+            	}
 
             // Random X position within bounds
             int x_range = WORLD_MAX_X - WORLD_MIN_X;

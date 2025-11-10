@@ -100,7 +100,7 @@ SDResult SD_Init(SPI_HandleTypeDef* hspi) {
     UART_Printf("SD: Sending CMD0...\r\n");
 
     // Try multiple times with proper timing
-    for(int attempt = 0; attempt < 100000; attempt++) {
+    for(int attempt = 0; attempt < 1; attempt++) {
         SD_CS_Low();
         HAL_Delay(1);  // Short delay after CS low
 

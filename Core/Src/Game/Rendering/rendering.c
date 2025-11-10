@@ -36,9 +36,12 @@ void Renderer_DrawFrame(GameState* state)
     // 1. Render player at origin with banking
     Matrix3x3 player_rotation;
     float tilt_angle = state->player_pos.x * 0.01f;
-    Matrix_RotateZ(&player_rotation, tilt_angle);
+    float angle = (HAL_GetTick() * 0.001f) + (1 * 0.5f);
+    Matrix_RotateY(&player_rotation, angle);
 
-    Position player_render_pos = {state->player_pos.x, 0, 0};  // Z always 0
+    //Matrix_RotateZ(&player_rotation, tilt_angle);
+    state->player_pos.z = 2;
+    Position player_render_pos = {state->player_pos.x, 0, state->player_pos.z+2};
     SPI_AddModelInstance(SHAPE_ID_PLAYER, &player_render_pos,
                         player_rotation.m, 0);
 

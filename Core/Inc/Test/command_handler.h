@@ -16,7 +16,7 @@ void Show_Game_Stats(void);
 void Test_Shape_Storage(void);
 void Run_All_Tests(void);
 
-// UART command buffer (made extern so main.c can access if needed)
+// UART command buffer
 extern char uart_command[64];
 extern uint8_t uart_cmd_index;
 

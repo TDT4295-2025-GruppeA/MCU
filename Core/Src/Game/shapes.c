@@ -1,10 +1,3 @@
-/*
- * shapes.c
- *
- *  Created on: Sep 15, 2025
- *      Author: jornik
- */
-
 // shapes.c - 3D shape creation implementation
 #include "./Game/shapes.h"
 #include <math.h>
@@ -34,21 +27,32 @@ void Shapes_CreatePlayer(Shape3D* shape)
     memset(shape, 0, sizeof(Shape3D));
 
     shape->id = SHAPE_PLAYER;
-    shape->vertex_count = 5;
+    shape->vertex_count = 4;
     shape->triangle_count = 4;
 
-    // Vertices for paper airplane
-    shape->vertices[0] = (Vertex3D){0, 0, 10};      // Nose
-    shape->vertices[1] = (Vertex3D){-10, 0, -5};    // Left wing tip
-    shape->vertices[2] = (Vertex3D){-3, -2, -5};    // Left wing bottom
-    shape->vertices[3] = (Vertex3D){10, 0, -5};     // Right wing tip
-    shape->vertices[4] = (Vertex3D){3, -2, -5};     // Right wing bottom
+    int16_t s = 1;  // Half-size
 
-    // Triangles (two wings forming V shape)
-    shape->triangles[0] = (Triangle){0, 1, 2};  // Left wing
-    shape->triangles[1] = (Triangle){0, 2, 4};  // Center body
-    shape->triangles[2] = (Triangle){0, 4, 3};  // Right wing
-    shape->triangles[3] = (Triangle){2, 1, 3};  // Back face
+    // Define vertices
+    shape->vertices[0] = (Vertex3D){  s,  s, -s}; // Left wing
+    shape->vertices[1] = (Vertex3D){  0, -s/2, -s}; // Top
+    shape->vertices[2] = (Vertex3D){ -s,  s, -s}; // Right wing
+    shape->vertices[3] = (Vertex3D){  0,  1.5*s,  2*s}; // Nose tip
+
+
+    // Define triangles (2 per face)
+    // Back face
+    shape->triangles[0] = (Triangle){0, 2, 1};
+
+    // Back face
+    shape->triangles[1] = (Triangle){1, 2, 3};
+
+    // Top face
+    shape->triangles[2] = (Triangle){1, 3, 0};
+
+    // Bottom face
+    shape->triangles[3] = (Triangle){3, 0, 2};
+
+
 }
 
 // Create cube shape
@@ -60,37 +64,37 @@ void Shapes_CreateCube(Shape3D* shape)
     shape->vertex_count = 8;
     shape->triangle_count = 12;
 
-    int16_t s = 8;  // Half-size
+    int16_t s = 1;
 
     // Define vertices
-    shape->vertices[0] = (Vertex3D){-s, -s, -s};
-    shape->vertices[1] = (Vertex3D){ s, -s, -s};
-    shape->vertices[2] = (Vertex3D){ s,  s, -s};
-    shape->vertices[3] = (Vertex3D){-s,  s, -s};
-    shape->vertices[4] = (Vertex3D){-s, -s,  s};
-    shape->vertices[5] = (Vertex3D){ s, -s,  s};
+    shape->vertices[0] = (Vertex3D){s, s, -s};
+    shape->vertices[1] = (Vertex3D){ -s, -s, -s};
+    shape->vertices[2] = (Vertex3D){ -s,  s, -s};
+    shape->vertices[3] = (Vertex3D){s,  -s, -s};
+    shape->vertices[4] = (Vertex3D){s, -s,  s};
+    shape->vertices[5] = (Vertex3D){ -s, -s,  s};
     shape->vertices[6] = (Vertex3D){ s,  s,  s};
     shape->vertices[7] = (Vertex3D){-s,  s,  s};
 
     // Define triangles (2 per face)
     // Front face
-    shape->triangles[0] = (Triangle){4, 5, 6};
-    shape->triangles[1] = (Triangle){4, 6, 7};
+    shape->triangles[0] = (Triangle){0, 2, 1};
+    shape->triangles[1] = (Triangle){1, 3, 0};
     // Back face
-    shape->triangles[2] = (Triangle){1, 0, 3};
-    shape->triangles[3] = (Triangle){1, 3, 2};
+    shape->triangles[2] = (Triangle){4, 3, 1};
+    shape->triangles[3] = (Triangle){1, 5, 4};
     // Top face
-    shape->triangles[4] = (Triangle){7, 6, 2};
-    shape->triangles[5] = (Triangle){7, 2, 3};
+    shape->triangles[4] = (Triangle){0, 3, 4};
+    shape->triangles[5] = (Triangle){4, 6, 0};
     // Bottom face
-    shape->triangles[6] = (Triangle){0, 1, 5};
-    shape->triangles[7] = (Triangle){0, 5, 4};
+    shape->triangles[6] = (Triangle){4, 5, 7};
+    shape->triangles[7] = (Triangle){7, 6, 4};
     // Right face
-    shape->triangles[8] = (Triangle){5, 1, 2};
-    shape->triangles[9] = (Triangle){5, 2, 6};
+    shape->triangles[8] = (Triangle){7, 5, 1};
+    shape->triangles[9] = (Triangle){1, 2, 7};
     // Left face
-    shape->triangles[10] = (Triangle){0, 4, 7};
-    shape->triangles[11] = (Triangle){0, 7, 3};
+    shape->triangles[10] = (Triangle){7, 2, 0};
+    shape->triangles[11] = (Triangle){0, 6, 7};
 }
 
 // Create cone shape

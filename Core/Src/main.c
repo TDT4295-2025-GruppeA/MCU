@@ -170,7 +170,6 @@ int main(void)
   {
     uint32_t now = HAL_GetTick();
     Game_Update(now);
-    HAL_Delay(20);
   }
     /* USER CODE END WHILE */
 

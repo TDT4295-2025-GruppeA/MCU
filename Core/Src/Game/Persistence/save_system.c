@@ -1,6 +1,9 @@
 #include "../../../Inc/Game/Persistence/save_system.h"
 #include "../../../Inc/SDCard/sd_card.h"
 #include "../../../Inc/SDCard/game_storage.h"
+#include <string.h>
+
+//#define RESET_SHAPES_ON_BOOT
 
 extern void UART_Printf(const char* format, ...);
 
@@ -15,7 +18,14 @@ void SaveSystem_Init(SPI_HandleTypeDef* hspi_sdcard)
     UART_Printf("Initializing SD Card...\r\n");
     if(Storage_Init(hspi_sd) == SD_OK) {
         sd_card_ready = 1;
+
+        //Force shape reset on initialization
+        #ifdef RESET_SHAPES_ON_BOOT
+        SaveSystem_ForceResetShapes();
+        #else
         Storage_InitializeShapes();
+        #endif
+
         UART_Printf("SD Card ready\r\n");
     } else {
         sd_card_ready = 0;
@@ -91,6 +101,35 @@ uint8_t SaveSystem_IsNewHighScore(uint32_t score)
 GameStats* SaveSystem_GetStats(void)
 {
     return &game_stats;
+}
+
+void SaveSystem_ForceResetShapes(void)
+{
+    if(!sd_card_ready) {
+        UART_Printf("SD Card not ready, cannot reset shapes\r\n");
+        return;
+    }
+
+    UART_Printf("Forcing shape reset on SD card...\r\n");
+
+    // Clear the shape blocks by writing zeros
+    uint8_t empty_block[512];
+    memset(empty_block, 0, 512);
+
+    // Clear each shape block
+    if(SD_WriteBlock(SHAPE_PLAYER_BLOCK, empty_block) == SD_OK) {
+        UART_Printf("  Cleared player shape block\r\n");
+    }
+    if(SD_WriteBlock(SHAPE_CUBE_BLOCK, empty_block) == SD_OK) {
+        UART_Printf("  Cleared cube shape block\r\n");
+    }
+    if(SD_WriteBlock(SHAPE_CONE_BLOCK, empty_block) == SD_OK) {
+        UART_Printf("  Cleared cone shape block\r\n");
+    }
+
+    // reinitialize with new shapes
+    Storage_InitializeShapes();
+    UART_Printf("New shapes written to SD card!\r\n");
 }
 
 

@@ -77,7 +77,6 @@ void Game_Update(uint32_t current_time)
             Renderer_DrawFrame(&game_state);
 
         }
-        HAL_Delay(1000);
     }
 }
 
