@@ -4,9 +4,10 @@
 #include <stdint.h>
 
 // ========== Game Constants ==========
-#define UPDATE_INTERVAL 100      // ms between updates
+#define UPDATE_INTERVAL 10      // ms between updates
 #define FORWARD_SPEED   5.0f     // units per second
-#define STRAFE_SPEED    10       // units per strafe
+#define PLAYER_STRAFE_ACCEL     1000.0f   // units/sec^2 (acceleration)
+#define PLAYER_STRAFE_MAX_SPEED 50.0f   // units/sec (max speed)
 #define WORLD_MIN_X     -50
 #define WORLD_MAX_X     50
 
@@ -105,6 +106,7 @@ typedef struct {
     float next_spawn_z;
     float total_distance;
     uint32_t game_start_time;  // Track when game started (for duration)
+    float player_strafe_speed;
 } GameState;
 
 // ========== Game Statistics ==========

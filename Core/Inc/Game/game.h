@@ -7,7 +7,6 @@
 
 void Game_Init(void);
 void Game_Update(uint32_t current_time);
-void Game_HandleButton(uint8_t button_state, uint32_t current_time);
 
 void Game_Reset(void);
 void Game_Pause(void);
