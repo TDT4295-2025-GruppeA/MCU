@@ -13,12 +13,12 @@ CollisionResult Collision_CheckPlayer(Position* player_pos, Obstacle* obstacles,
 {
     CollisionResult result = {COLLISION_NONE, 0, 0.0f};
 
-    // Check boundary collision
-    if(player_pos->x < WORLD_MIN_X || player_pos->x > WORLD_MAX_X)
-    {
-        result.type = COLLISION_BOUNDARY;
-        return result;
-    }
+    // // Check boundary collision
+    // if(player_pos->x < WORLD_MIN_X || player_pos->x > WORLD_MAX_X)
+    // {
+    //     result.type = COLLISION_BOUNDARY;
+    //     return result;
+    // }
 
     // Check obstacle collisions
     for(uint8_t i = 0; i < obstacle_count; i++)

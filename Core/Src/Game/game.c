@@ -27,6 +27,7 @@ static void UpdatePlayerStrafe(GameState* state, float input)
 {
     // input: -1 (left), 0 (none), 1 (right), or analog [-1,1] for joystick
     float accel = PLAYER_STRAFE_ACCEL;
+    float decel = PLAYER_STRAFE_DECEL;
     float max_speed = PLAYER_STRAFE_MAX_SPEED;
 
     // Accelerate based on input
@@ -40,11 +41,11 @@ static void UpdatePlayerStrafe(GameState* state, float input)
     // Decay speed toward zero if no input (simulate friction)
     if (input == 0) {
         if (state->player_strafe_speed > 0) {
-            state->player_strafe_speed -= accel * TIME_STEP;
+            state->player_strafe_speed -= decel * TIME_STEP;
             if (state->player_strafe_speed < 0)
                 state->player_strafe_speed = 0;
         } else if (state->player_strafe_speed < 0) {
-            state->player_strafe_speed += accel * TIME_STEP;
+            state->player_strafe_speed += decel * TIME_STEP;
             if (state->player_strafe_speed > 0)
                 state->player_strafe_speed = 0;
         }
@@ -55,7 +56,7 @@ static void UpdatePlayerStrafe(GameState* state, float input)
 }
 
 // Global game state
-static GameState game_state;
+GameState game_state;
 static uint32_t last_update_time = 0;
 static ADCButtonState adc_buttons;
 
@@ -128,7 +129,7 @@ static void _HandleInput(void)
             // Button input: right=1, left=-1, none=0
             float input = 0.0f;
             if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13) == 0) {
-                input = 1.0f; // right
+                // input = 1.0f; // right
             } else {
                 input = -1.0f; // left
             }

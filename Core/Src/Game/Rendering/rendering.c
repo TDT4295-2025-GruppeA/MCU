@@ -65,8 +65,11 @@ void Renderer_DrawFrame(GameState* state)
                 Matrix_Identity(&rotation);
             }
 
-            // Send actual position (no relative calculation!)
-            SPI_AddModelInstance(obstacles[i].shape_id, &obstacles[i].pos,
+            // Adjust obstacle X to keep player visually centered
+            Position render_pos = obstacles[i].pos;
+            render_pos.x -= state->player_pos.x;
+
+            SPI_AddModelInstance(obstacles[i].shape_id, &render_pos,
                                rotation.m, 0);
 
             if(is_last_model) break;
@@ -78,7 +81,7 @@ void Renderer_DrawFrame(GameState* state)
     float tilt_angle = state->player_pos.x * 0.01f;
     Matrix_RotateZ(&player_rotation, tilt_angle);
 
-    Position player_render_pos = {state->player_pos.x, 0, 0};  // Z always 0
+    Position player_render_pos = {0, 0, 0};
     SPI_AddModelInstance(SHAPE_ID_PLAYER, &player_render_pos,
                         player_rotation.m, 1);
 }

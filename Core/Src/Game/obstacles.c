@@ -24,7 +24,7 @@ void Obstacles_Init(void)
     // Spawn initial obstacles ahead of player (positive Z)
     for(int i = 0; i < 3; i++)
     {
-        Obstacles_Spawn(OBSTACLE_SPAWN_DIST + (i * OBSTACLE_SPACING));
+    Obstacles_Spawn(OBSTACLE_SPAWN_DIST + (i * OBSTACLE_SPACING));
     }
 }
 
@@ -67,13 +67,15 @@ void Obstacles_Spawn(float z_position)
             obs->height = cube_shape->height;
             obs->depth = cube_shape->depth;
 
-            // Random X position within bounds
-            obs->pos.x = (float)(rand() % OBSTACLE_X_RANGE) + WORLD_MIN_X;
+            // Random X position relative to player
+            const GameState* state = Game_GetState();
+            float offset = ((float)(rand() % ((int)(2 * OBSTACLE_SPAWN_OFFSET)))) - OBSTACLE_SPAWN_OFFSET;
+            obs->pos.x = state->player_pos.x + offset;
             obs->pos.y = 0;
             obs->pos.z = z_position;
 
-            UART_Printf("Spawned obstacle %d at [%d, %d]\r\n",
-                       obs->shape_id, (int)obs->pos.x, (int)obs->pos.z);
+            UART_Printf("Spawned obstacle %d at [%.1f, %.1f]\r\n",
+                       obs->shape_id, obs->pos.x, obs->pos.z);
             break;
         }
     }
@@ -91,7 +93,7 @@ void Obstacles_MoveTowardPlayer(float speed)
 }
 
 // Update obstacles
-void Obstacles_Update(float player_z, float delta_time)
+void Obstacles_Update(Position* player_pos, float delta_time)
 {
     float furthest_z = 0;  // Start at player position
 
@@ -100,7 +102,7 @@ void Obstacles_Update(float player_z, float delta_time)
         if(obstacle_pool[i].active)
         {
             // Remove obstacles that have passed behind the player
-            if(obstacle_pool[i].pos.z < -30)  // Behind player
+            if(obstacle_pool[i].pos.z < player_pos->z - 30)  // Behind player
             {
                 obstacle_pool[i].active = 0;
                 obstacles_passed++;

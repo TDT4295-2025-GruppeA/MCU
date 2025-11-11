@@ -26,7 +26,7 @@ void GameLogic_Update(GameState* state, float delta_time)
     }
 
     // Update obstacles (spawning/despawning)
-    Obstacles_Update(0, delta_time);
+    Obstacles_Update(&state->player_pos, delta_time);
 }
 
 void GameLogic_MovePlayer(GameState* state, float delta_x)
@@ -35,12 +35,6 @@ void GameLogic_MovePlayer(GameState* state, float delta_x)
 
     state->player_pos.x += delta_x;
 
-    // Clamp to world bounds
-    if(state->player_pos.x < WORLD_MIN_X) {
-        state->player_pos.x = WORLD_MIN_X;
-    } else if(state->player_pos.x > WORLD_MAX_X) {
-        state->player_pos.x = WORLD_MAX_X;
-    }
 
     UART_Printf("Player X=%d\r\n", (int)state->player_pos.x);
 }
