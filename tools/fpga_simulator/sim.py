@@ -172,17 +172,21 @@ def serial_thread(port, baud):
 
 def handle_upload_triangle(packet):
     global current_upload_tris
-    # Parse triangle: color (2), v0 (12), v1 (12), v2 (12)
-    color_val = int.from_bytes(packet[1:3], 'big')
-    r = ((color_val >> 10) & 0x1F) / 31.0
-    g = ((color_val >> 5) & 0x1F) / 31.0
-    b = (color_val & 0x1F) / 31.0
-    tri_color = (r, g, b)
-    v0 = parse_vertex(packet, 3)
-    v1 = parse_vertex(packet, 15)
-    v2 = parse_vertex(packet, 27)
-    current_upload_tris.append((v0, v1, v2, tri_color))
-    dbg(f"Upload Triangle: v0={v0}, v1={v1}, v2={v2}, color={tri_color}")
+    # Parse triangle: 3x (color (2), vertex (12))
+    colors = []
+    vertices = []
+    for i in range(3):
+        color_offset = 1 + i * 14
+        color_val = int.from_bytes(packet[color_offset:color_offset+2], 'big')
+        r = ((color_val >> 10) & 0x1F) / 31.0
+        g = ((color_val >> 5) & 0x1F) / 31.0
+        b = (color_val & 0x1F) / 31.0
+        colors.append((r, g, b))
+        vertex_offset = color_offset + 2
+        vertex = parse_vertex(packet, vertex_offset)
+        vertices.append(vertex)
+    current_upload_tris.append((vertices[0], vertices[1], vertices[2], colors))
+    dbg(f"Upload Triangle: v0={vertices[0]}, v1={vertices[1]}, v2={vertices[2]}, colors={colors}")
 
 
 
@@ -298,7 +302,7 @@ def create_scene():
     scene.width = 1200
     scene.height = 900
     scene.center = vector(0, 2, 0)
-    scene.forward = vector(0, -0.25, -1)
+    scene.forward = vector(0, -0.25, 1)
     scene.autoscale = False
     scene.background = color.gray(0.2)
     info_label = label(pos=vector(-40, 30, 0), text="", height=16, box=False)
@@ -332,12 +336,12 @@ def parse_rotation(packet, offset):
 # Helper to create a VPython triangle from triangle data and position
 def create_vpython_triangle(tri, pos):
     from vpython import vertex, vector, triangle
-    # tri: (v0, v1, v2, tri_color)
-    v0, v1, v2, tri_color = tri
+    # tri: (v0, v1, v2, colors)
+    v0, v1, v2, colors = tri
     return triangle(
-        v0=vertex(pos=vector(*v0) + vector(*pos), color=vector(*tri_color)),
-        v1=vertex(pos=vector(*v1) + vector(*pos), color=vector(*tri_color)),
-        v2=vertex(pos=vector(*v2) + vector(*pos), color=vector(*tri_color))
+        v0=vertex(pos=vector(*v0) + vector(*pos), color=vector(*colors[0])),
+        v1=vertex(pos=vector(*v1) + vector(*pos), color=vector(*colors[1])),
+        v2=vertex(pos=vector(*v2) + vector(*pos), color=vector(*colors[2]))
     )
 
 # Helper to create a VPython box from position and color
