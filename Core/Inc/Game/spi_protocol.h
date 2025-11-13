@@ -6,7 +6,7 @@
 
 // Enable SIM_UART to mirror SPI packets to USART1 (ST-LINK VCP) for the PC simulator.
 // Comment out or remove this line to disable simulator forwarding in production builds.
-#define SIM_UART
+// #define SIM_UART
 // Command definitions
 #define CMD_RESET           0x00
 #define CMD_BEGIN_UPLOAD    0xA0

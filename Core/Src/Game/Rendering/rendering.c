@@ -79,7 +79,7 @@ void Renderer_DrawFrame(GameState* state)
 
     // Render player at origin with banking
     Matrix3x3 player_rotation;
-    float tilt_angle = state->player_pos.x * 0.01f;
+    float tilt_angle = state->player_pos.x * 0.00f;
     Matrix_RotateZ(&player_rotation, tilt_angle);
 
     Position player_render_pos = {0, 0, 0};

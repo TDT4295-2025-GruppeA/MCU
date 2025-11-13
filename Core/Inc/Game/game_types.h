@@ -5,10 +5,10 @@
 
 // ========== Game Constants ==========
 #define UPDATE_INTERVAL 10      // ms between updates
-#define FORWARD_SPEED   40.0f     // units per second
-#define PLAYER_STRAFE_ACCEL     10000.0f   // units/sec^2 (acceleration)
-#define PLAYER_STRAFE_DECEL (PLAYER_STRAFE_ACCEL * 3.0f)
-#define PLAYER_STRAFE_MAX_SPEED 400.0f   // units/sec (max speed)
+#define FORWARD_SPEED   10.0f     // units per second
+#define PLAYER_STRAFE_ACCEL     100.0f   // units/sec^2 (acceleration)
+#define PLAYER_STRAFE_DECEL (PLAYER_STRAFE_ACCEL * 2.0f)
+#define PLAYER_STRAFE_MAX_SPEED 10.0f   // units/sec (max speed)
 #define WORLD_MIN_X     -50
 #define WORLD_MAX_X     50
 
@@ -16,9 +16,9 @@
 #define MAX_VERTICES    32       // Max vertices per shape
 #define MAX_TRIANGLES   16       // Max triangles per shape
 #define MAX_OBSTACLES   20       // Max obstacles on screen
-#define OBSTACLE_SPAWN_DIST 100  // Distance ahead to spawn obstacles
-#define OBSTACLE_SPACING 30      // Min spacing between obstacles
-#define OBSTACLE_SPAWN_OFFSET 100.0f // Obstacles spawn within ±100 units of player X
+#define OBSTACLE_SPAWN_DIST 50  // Distance ahead to spawn obstacles
+#define OBSTACLE_SPACING 10      // Min spacing between obstacles
+#define OBSTACLE_SPAWN_OFFSET 35.0f // Obstacles spawn within ±100 units of player X
 
 // ========== SPI Protocol Commands ==========
 typedef enum {
