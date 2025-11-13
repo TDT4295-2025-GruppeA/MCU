@@ -1,11 +1,3 @@
-/*
- * collision.h
- *
- *  Created on: Sep 15, 2025
- *      Author: jornik
- */
-
-// collision.h - Collision detection system
 #ifndef COLLISION_H
 #define COLLISION_H
 

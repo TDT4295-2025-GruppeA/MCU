@@ -1,19 +1,9 @@
-
 #ifndef INC_SDCARD_GAME_STORAGE_H_
 #define INC_SDCARD_GAME_STORAGE_H_
 
 #include "./SDCard/sd_card.h"
 #include "./Game/shapes.h"
-
-// Save game structure
-typedef struct {
-    uint32_t magic;         // Validation magic number
-    uint32_t version;       // Save format version
-    uint32_t high_score;    // Highest score achieved
-    uint32_t total_played;  // Total games played
-    uint32_t total_time;    // Total time played (seconds)
-    uint32_t checksum;      // Simple checksum
-} GameSave;
+#include "./Game/game_types.h"
 
 // Save shapes used in game
 typedef struct {

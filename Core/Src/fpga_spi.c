@@ -1,10 +1,3 @@
-/*
- * fpga_spi.c
- *
- *  Created on: Sep 8, 2025
- *      Author: jornik
- */
-
 #include "fpga_spi.h"
 
 static SPI_HandleTypeDef* fpga_spi = NULL;
@@ -33,14 +26,6 @@ HAL_StatusTypeDef FPGA_SPI_Init(SPI_HandleTypeDef* hspi) {
 
     // Start with CS high (inactive)
     CS_High();
-
-    // Configure SPI if not done in CubeMX
-    // Typical settings for FPGA communication:
-    // - Master mode
-    // - 8-bit data
-    // - CPOL=0, CPHA=0 (Mode 0)
-    // - MSB first
-    // - Speed: Start with 1-2 MHz
 
     return HAL_OK;
 }

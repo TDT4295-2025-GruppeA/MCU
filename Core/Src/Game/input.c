@@ -1,11 +1,3 @@
-	/*
- * input.c
- *
- *  Created on: Sep 15, 2025
- *      Author: jornik
- */
-
-// input.c - Input handling implementation
 #include "./Game/input.h"
 #include "stm32u5xx_hal.h"
 #include "stm32u5xx_nucleo.h"

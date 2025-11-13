@@ -1,11 +1,3 @@
-/*
- * input.h
- *
- *  Created on: Sep 15, 2025
- *      Author: jornik
- */
-
-// input.h - Input handling system
 #ifndef INPUT_H
 #define INPUT_H
 

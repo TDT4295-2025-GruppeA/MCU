@@ -1,5 +1,5 @@
-// spi_protocol.c - SPI communication implementation
 #include "./Game/spi_protocol.h"
+#include "./Utilities/transform.h"
 #include <string.h>
 
 // External UART for debugging
@@ -28,6 +28,10 @@ void SPI_TransmitPacket(uint8_t* data, uint16_t size)
 
     // Transmit data
     HAL_SPI_Transmit(hspi, data, size, 100);
+
+    // Send null byte due to error on FPGA side
+    uint8_t dummy_data = 0;
+    HAL_SPI_Transmit(hspi, &dummy_data, 1, 10);
 
     // Pull CS high
     HAL_GPIO_WritePin(SPI_CS_PORT, SPI_CS_PIN, GPIO_PIN_SET);
@@ -86,15 +90,19 @@ void SPI_SendShape(Shape3D* shape)
                shape->id, idx, shape->vertex_count, shape->triangle_count);
 }
 
-void SPI_SendShapeToFPGA(Shape3D* shape) {
-    uint8_t begin_cmd = CMD_BEGIN_UPLOAD;
-    SPI_TransmitPacket(&begin_cmd, 1);
+void SPI_SendShapeToFPGA(uint8_t model_id, Shape3D* shape)
+{
+    uint8_t begin_packet[2];
+    begin_packet[0] = CMD_BEGIN_UPLOAD;
+    begin_packet[1] = model_id;
+    SPI_TransmitPacket(begin_packet, 2);
 
+    // Upload triangles
     for(int i = 0; i < shape->triangle_count; i++) {
-        uint8_t packet[39];
+        uint8_t packet[43];
         packet[0] = CMD_UPLOAD_TRIANGLE;
-        packet[1] = 0xFF;
-        packet[2] = 0xFF;
+
+        uint16_t colors[] = {0xFFFF, 0xFF00, 0x00FF};
 
         for(int v = 0; v < 3; v++) {
             uint8_t vertex_idx = (v == 0) ? shape->triangles[i].v1 :
@@ -105,37 +113,43 @@ void SPI_SendShapeToFPGA(Shape3D* shape) {
             int32_t y = (int32_t)(shape->vertices[vertex_idx].y * 65536.0f);
             int32_t z = (int32_t)(shape->vertices[vertex_idx].z * 65536.0f);
 
-            int offset = 3 + (v * 12);
+            int offset = 1 + (v * 14);
             // Pack all three coordinates
-            packet[offset+0] = (x >> 24) & 0xFF;
-            packet[offset+1] = (x >> 16) & 0xFF;
-            packet[offset+2] = (x >> 8) & 0xFF;
-            packet[offset+3] = x & 0xFF;
+            packet[offset++] = colors[v] >> 4;  // RGB byte 1
+            packet[offset++] = colors[v];  // RGB byte 2
+            packet[offset++] = (x >> 24) & 0xFF;
+            packet[offset++] = (x >> 16) & 0xFF;
+            packet[offset++] = (x >> 8) & 0xFF;
+            packet[offset++] = x & 0xFF;
 
-            packet[offset+4] = (y >> 24) & 0xFF;
-            packet[offset+5] = (y >> 16) & 0xFF;
-            packet[offset+6] = (y >> 8) & 0xFF;
-            packet[offset+7] = y & 0xFF;
+            packet[offset++] = (y >> 24) & 0xFF;
+            packet[offset++] = (y >> 16) & 0xFF;
+            packet[offset++] = (y >> 8) & 0xFF;
+            packet[offset++] = y & 0xFF;
 
-            packet[offset+8] = (z >> 24) & 0xFF;
-            packet[offset+9] = (z >> 16) & 0xFF;
-            packet[offset+10] = (z >> 8) & 0xFF;
-            packet[offset+11] = z & 0xFF;
+            packet[offset++] = (z >> 24) & 0xFF;
+            packet[offset++] = (z >> 16) & 0xFF;
+            packet[offset++] = (z >> 8) & 0xFF;
+            packet[offset++] = z & 0xFF;
         }
 
-        SPI_TransmitPacket(packet, 39);
+        SPI_TransmitPacket(packet, 43);
     }
+
+    UART_Printf("SPI: Uploaded model ID %d with %d triangles\r\n",
+                model_id, shape->triangle_count);
 }
 
-void SPI_AddModelInstance(uint8_t shape_id, Position* pos, float* rotation_matrix)
+void SPI_AddModelInstance(uint8_t shape_id, Position* pos, float* rotation_matrix, uint8_t is_last_model)
 {
     uint8_t packet[51];
     memset(packet, 0, 51);
 
     packet[0] = CMD_ADD_INSTANCE;
-    packet[1] = 0x00;
+    packet[1] = is_last_model ? 0x01 : 0x00;  // Last model flag
     packet[2] = shape_id;
 
+    // Position in fixed-point
     int32_t x_fixed = (int32_t)(pos->x * 65536.0f);
     int32_t y_fixed = (int32_t)(pos->y * 65536.0f);
     int32_t z_fixed = (int32_t)(pos->z * 65536.0f);
@@ -156,30 +170,33 @@ void SPI_AddModelInstance(uint8_t shape_id, Position* pos, float* rotation_matri
     packet[13] = (z_fixed >> 8) & 0xFF;
     packet[14] = z_fixed & 0xFF;
 
-    // Identity matrix if no rotation provided
-    if(rotation_matrix == NULL) {
-        int32_t one = 65536;  // 1.0 in fixed point
-        int32_t zero = 0;
-
-        // Pack identity matrix (diagonal = 1, rest = 0)
-        // This is a 3x3 matrix, so 9 values
+    // Pack rotation matrix (or identity if NULL)
+    if(rotation_matrix != NULL) {
+        // Use provided matrix
         for(int i = 0; i < 9; i++) {
-            int32_t value = (i == 0 || i == 4 || i == 8) ? one : zero;
+            int32_t value = (int32_t)(rotation_matrix[i] * 65536.0f);
             int offset = 15 + (i * 4);
             packet[offset] = (value >> 24) & 0xFF;
             packet[offset+1] = (value >> 16) & 0xFF;
             packet[offset+2] = (value >> 8) & 0xFF;
             packet[offset+3] = value & 0xFF;
         }
+    } else {
+        // Identity matrix
+        int32_t one = 65536;  // 1.0 in fixed point
+    	int32_t zero = 0;
+
+    	for(int i = 0; i < 9; i++) {
+    		int32_t value = (i == 0 || i == 4 || i == 8) ? one : zero;
+    		int offset = 15 + (i * 4);
+    		packet[offset] = (value >> 24) & 0xFF;
+    		packet[offset+1] = (value >> 16) & 0xFF;
+    		packet[offset+2] = (value >> 8) & 0xFF;
+    		packet[offset+3] = value & 0xFF;
+    	}
     }
 
-    SPI_TransmitPacket(packet, 51);
-}
-
-void SPI_BeginRender(void)
-{
-    uint8_t cmd = CMD_BEGIN_RENDER;  // 0xF0
-    SPI_TransmitPacket(&cmd, 1);
+    SPI_TransmitPacket((uint8_t*)packet, 51);
 }
 
 // Send obstacle positions

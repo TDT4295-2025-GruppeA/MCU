@@ -91,7 +91,7 @@ void MX_SPI1_Init(void)
     hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
     hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
     hspi1.Init.NSS = SPI_NSS_SOFT;
-    hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
+    hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
     hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
     hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
     hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -109,7 +109,7 @@ void MX_SPI3_Init(void)
     hspi3.Init.Direction = SPI_DIRECTION_2LINES;
     hspi3.Init.DataSize = SPI_DATASIZE_8BIT;
     hspi3.Init.CLKPolarity = SPI_POLARITY_LOW;
-    hspi3.Init.CLKPhase = SPI_PHASE_1EDGE;  // Important for SD card!
+    hspi3.Init.CLKPhase = SPI_PHASE_1EDGE;
     hspi3.Init.NSS = SPI_NSS_SOFT;
     hspi3.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256;
     hspi3.Init.FirstBit = SPI_FIRSTBIT_MSB;

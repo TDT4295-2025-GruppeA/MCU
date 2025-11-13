@@ -86,21 +86,18 @@ SDResult SD_Init(SPI_HandleTypeDef* hspi) {
 
     UART_Printf("SD: Initializing...\r\n");
 
-    // Step 1: Power up sequence with CS HIGH
     SD_CS_High();
-    HAL_Delay(10);  // Reduced from 2500ms
+    HAL_Delay(10);
 
-    // Step 2: Send 80+ clock pulses with CS HIGH (10 bytes = 80 clocks)
     UART_Printf("SD: Power up sequence...\r\n");
     for(int i = 0; i < 10; i++) {
         SD_WriteByte(0xFF);
     }
 
-    // Step 3: Send CMD0 to enter SPI mode
     UART_Printf("SD: Sending CMD0...\r\n");
 
     // Try multiple times with proper timing
-    for(int attempt = 0; attempt < 100000; attempt++) {
+    for(int attempt = 0; attempt < 1; attempt++) {
         SD_CS_Low();
         HAL_Delay(1);  // Short delay after CS low
 
@@ -123,7 +120,6 @@ SDResult SD_Init(SPI_HandleTypeDef* hspi) {
     return SD_NO_CARD;
 
 card_ready:
-    // Step 4: Check SD version with CMD8
     UART_Printf("SD: Checking card version...\r\n");
     response = SD_SendCommand(CMD8, 0x1AA);
 
@@ -215,13 +211,13 @@ card_ready:
         return SD_ERROR;
     }
 
-    // Step 5: Set block size to 512 bytes
+    // Set block size to 512 bytes
     response = SD_SendCommand(CMD16, 512);
     if(response != 0x00) {
         UART_Printf("SD: Failed to set block size\r\n");
     }
 
-    // Step 6: Deselect and complete
+    //Deselect and complete
     SD_CS_High();
 
     // Update card info

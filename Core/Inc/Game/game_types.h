@@ -1,47 +1,42 @@
-/*
- * game_types.h
- *
- *  Created on: Sep 15, 2025
- *      Author: jornik
- */
-
-// game_types.h - Common game types and constants
 #ifndef GAME_TYPES_H
 #define GAME_TYPES_H
 
 #include <stdint.h>
 
 // ========== Game Constants ==========
-#define UPDATE_INTERVAL     100     // ms between updates
-#define FORWARD_SPEED       5.0f    // units per second
-#define STRAFE_SPEED        10      // units per strafe
-#define WORLD_MIN_X         -50
-#define WORLD_MAX_X         50
+#define UPDATE_INTERVAL 25     // ms between updates
+#define FORWARD_SPEED   5.0f     // units per second
+#define STRAFE_SPEED    0.1       // units per strafe
+#define WORLD_MIN_X     -5
+#define WORLD_MAX_X     5
 
 // 3D Shape constants
-#define MAX_VERTICES        32      // Max vertices per shape
-#define MAX_TRIANGLES       16      // Max triangles per shape
-#define MAX_OBSTACLES       10      // Max obstacles on screen
-#define OBSTACLE_SPAWN_DIST 100     // Distance ahead to spawn obstacles
-#define OBSTACLE_SPACING    30      // Min spacing between obstacles
+#define MAX_VERTICES    32       // Max vertices per shape
+#define MAX_TRIANGLES   16       // Max triangles per shape
+#define MAX_OBSTACLES   20       // Max obstacles on screen
+#define OBSTACLE_SPAWN_DIST 50  // Distance ahead to spawn obstacles
+#define OBSTACLE_SPACING 6      // Min spacing between obstacles
 
 // ========== SPI Protocol Commands ==========
 typedef enum {
-    CMD_POSITION     = 0x01,   // Update player position
-    CMD_SHAPE_DEF    = 0x02,   // Define a shape
-    CMD_OBSTACLE_POS = 0x03,   // Update obstacle positions
-    CMD_CLEAR_SCENE  = 0x04,   // Clear all objects
-    CMD_COLLISION    = 0x05,   // Collision event
-    CMD_GAME_STATE   = 0x06    // Game state update
+    CMD_POSITION     = 0x01,    // Update player position
+    CMD_SHAPE_DEF    = 0x02,    // Define a shape
+    CMD_OBSTACLE_POS = 0x03,    // Update obstacle positions
+    CMD_CLEAR_SCENE  = 0x04,    // Clear all objects
+    CMD_COLLISION    = 0x05,    // Collision event
+    CMD_GAME_STATE   = 0x06     // Game state update
 } SPI_Command;
 
 // ========== Shape IDs ==========
+// Aliases for compatibility
 typedef enum {
     SHAPE_PLAYER = 0x00,
     SHAPE_CUBE   = 0x01,
     SHAPE_CONE   = 0x02,
     SHAPE_PYRAMID = 0x03,
-    SHAPE_SPHERE = 0x04
+    SHAPE_SPHERE = 0x04,
+
+    SHAPE_ID_PLAYER = SHAPE_PLAYER,
 } ShapeID;
 
 // ========== Basic Types ==========
@@ -74,12 +69,12 @@ typedef struct {
 
 // ========== Game Objects ==========
 typedef struct {
-    uint8_t active;         // Is this obstacle active?
-    uint8_t shape_id;       // Which shape to use
-    Position pos;           // Position in world
-    float width;            // Collision box width
-    float height;           // Collision box height
-    float depth;            // Collision box depth
+    uint8_t active;      // Is this obstacle active?
+    uint8_t shape_id;    // Which shape to use
+    Position pos;        // Position in world
+    float width;         // Collision box width
+    float height;        // Collision box height
+    float depth;         // Collision box depth
 } Obstacle;
 
 typedef struct {
@@ -104,6 +99,42 @@ typedef struct {
     GameStateEnum state;
     uint32_t score;
     float next_spawn_z;
+    float total_distance;
+    uint32_t game_start_time;  // Track when game started (duration)
 } GameState;
+
+// ========== Game Statistics ==========
+typedef struct {
+    uint32_t high_score;    // Best score ever
+    uint32_t last_score;    // Score from last game
+    uint32_t total_games;   // Total games played
+    uint32_t total_time;    // Total time played (seconds)
+} GameStats;
+
+// ========== Save Game Structure ==========
+typedef struct {
+    uint32_t magic;         // Magic number for validation (0x47414D45 = "GAME")
+    uint32_t version;       // Save format version
+    uint32_t high_score;    // Saved high score
+    uint32_t total_played;  // Total games played
+    uint32_t total_time;    // Total time played
+    uint32_t checksum;      // Simple checksum for validation
+} GameSave;
+
+// ========== Debug/Development Flags ==========
+#ifdef DEBUG
+    #define DEBUG_SPI
+    #define DEBUG_COLLISION
+    #define DEBUG_STATE
+#endif
+
+// ========== Error Codes ==========
+typedef enum {
+    GAME_OK = 0,
+    GAME_ERROR_INIT,
+    GAME_ERROR_SD_CARD,
+    GAME_ERROR_SPI,
+    GAME_ERROR_MEMORY
+} GameError;
 
 #endif // GAME_TYPES_H
