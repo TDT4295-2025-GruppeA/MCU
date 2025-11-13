@@ -6,16 +6,16 @@
 // ========== Game Constants ==========
 #define UPDATE_INTERVAL 25     // ms between updates
 #define FORWARD_SPEED   5.0f     // units per second
-#define STRAFE_SPEED    10       // units per strafe
-#define WORLD_MIN_X     -50
-#define WORLD_MAX_X     50
+#define STRAFE_SPEED    0.1       // units per strafe
+#define WORLD_MIN_X     -5
+#define WORLD_MAX_X     5
 
 // 3D Shape constants
 #define MAX_VERTICES    32       // Max vertices per shape
 #define MAX_TRIANGLES   16       // Max triangles per shape
-#define MAX_OBSTACLES   1       // Max obstacles on screen
-#define OBSTACLE_SPAWN_DIST 100  // Distance ahead to spawn obstacles
-#define OBSTACLE_SPACING 30      // Min spacing between obstacles
+#define MAX_OBSTACLES   20       // Max obstacles on screen
+#define OBSTACLE_SPAWN_DIST 50  // Distance ahead to spawn obstacles
+#define OBSTACLE_SPACING 6      // Min spacing between obstacles
 
 // ========== SPI Protocol Commands ==========
 typedef enum {
@@ -36,7 +36,6 @@ typedef enum {
     SHAPE_PYRAMID = 0x03,
     SHAPE_SPHERE = 0x04,
 
-    // Aliases for compatibility
     SHAPE_ID_PLAYER = SHAPE_PLAYER,
 } ShapeID;
 

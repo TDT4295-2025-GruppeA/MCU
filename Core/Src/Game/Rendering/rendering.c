@@ -1,4 +1,3 @@
-//rendering.c
 #include "../../../Inc/Game/Rendering/rendering.h"
 #include "../../../Inc/Game/spi_protocol.h"
 #include "../../../Inc/Game/shapes.h"
@@ -14,6 +13,8 @@ void Renderer_Init(SPI_HandleTypeDef* hspi)
 {
     spi_handle = hspi;
     SPI_Protocol_Init(hspi);
+    uint8_t reset_data[] = {0x55, 0x55};
+    SPI_TransmitPacket(reset_data, 2);
     UART_Printf("Renderer initialized\r\n");
 }
 
@@ -37,11 +38,10 @@ void Renderer_DrawFrame(GameState* state)
     Matrix3x3 player_rotation;
     float tilt_angle = state->player_pos.x * 0.01f;
     float angle = (HAL_GetTick() * 0.001f) + (1 * 0.5f);
-    Matrix_RotateY(&player_rotation, angle);
 
-    //Matrix_RotateZ(&player_rotation, tilt_angle);
-    state->player_pos.z = 2;
-    Position player_render_pos = {state->player_pos.x, 0, state->player_pos.z+2};
+    Matrix_RotateZ(&player_rotation, tilt_angle);
+    state->player_pos.z = 4;
+    Position player_render_pos = {state->player_pos.x, 1, state->player_pos.z};
     SPI_AddModelInstance(SHAPE_ID_PLAYER, &player_render_pos,
                         player_rotation.m, 0);
 
@@ -56,7 +56,7 @@ void Renderer_DrawFrame(GameState* state)
         }
     }
 
-    // 3. Render obstacles (no relative position needed!)
+    // 3. Render obstacles
     int rendered = 0;
     uint8_t is_last_model = 0;
 
@@ -77,7 +77,7 @@ void Renderer_DrawFrame(GameState* state)
                 Matrix_Identity(&rotation);
             }
 
-            // Send actual position (no relative calculation!)
+            // Send actual position
             SPI_AddModelInstance(obstacles[i].shape_id, &obstacles[i].pos,
                                rotation.m, is_last_model);
 

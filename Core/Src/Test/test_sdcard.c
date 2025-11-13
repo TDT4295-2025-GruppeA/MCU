@@ -122,55 +122,7 @@ uint8_t test_game_save_load(void) {
     return 1;
 }
 
-// Test 5: Shape save and load
-uint8_t test_shape_save_load(void) {
-    Shape3D test_shape, loaded_shape;
-
-    // Create a simple test shape
-    memset(&test_shape, 0, sizeof(Shape3D));
-    test_shape.id = 99;  // Test ID (not a real shape)
-    test_shape.vertex_count = 3;
-    test_shape.triangle_count = 1;
-
-    // Create triangle vertices
-    test_shape.vertices[0] = (Vertex3D){0, 0, 0};
-    test_shape.vertices[1] = (Vertex3D){10, 0, 0};
-    test_shape.vertices[2] = (Vertex3D){5, 10, 0};
-
-    // Create triangle
-    test_shape.triangles[0] = (Triangle){0, 1, 2};
-
-    // Save to a test block (use 99 as test shape ID)
-    SDResult result = SD_WriteBlock(300, (uint8_t*)&test_shape);
-
-    // Test saving player shape
-    Shape3D* player = Shapes_GetPlayer();
-    result = Storage_SaveShape(SHAPE_PLAYER, player);
-    TEST_ASSERT_EQUAL(SD_OK, result, "Player shape save should succeed");
-
-    // Clear and reload
-    memset(&loaded_shape, 0, sizeof(Shape3D));
-    result = Storage_LoadShape(SHAPE_PLAYER, &loaded_shape);
-    TEST_ASSERT_EQUAL(SD_OK, result, "Player shape load should succeed");
-
-    // Verify shape data
-    TEST_ASSERT_EQUAL(player->vertex_count, loaded_shape.vertex_count,
-                      "Vertex count should match");
-    TEST_ASSERT_EQUAL(player->triangle_count, loaded_shape.triangle_count,
-                      "Triangle count should match");
-
-    // Verify first vertex
-    TEST_ASSERT_EQUAL(player->vertices[0].x, loaded_shape.vertices[0].x,
-                      "First vertex X should match");
-    TEST_ASSERT_EQUAL(player->vertices[0].y, loaded_shape.vertices[0].y,
-                      "First vertex Y should match");
-    TEST_ASSERT_EQUAL(player->vertices[0].z, loaded_shape.vertices[0].z,
-                      "First vertex Z should match");
-
-    return 1;
-}
-
-// Test 6: Shape exists check
+// Test 5: Shape exists check
 uint8_t test_shape_exists(void) {
     // After initialization, shapes should exist
     uint8_t exists = Storage_ShapeExists(SHAPE_PLAYER);
@@ -189,7 +141,7 @@ uint8_t test_shape_exists(void) {
     return 1;
 }
 
-// Test 7: Data integrity with checksum
+// Test 6: Data integrity with checksum
 uint8_t test_data_integrity(void) {
     GameSave save_data;
 
@@ -221,7 +173,7 @@ uint8_t test_data_integrity(void) {
     return 1;
 }
 
-// Test 8: Block boundary test
+// Test 7: Block boundary test
 uint8_t test_block_boundaries(void) {
     // Write patterns at block boundaries
     memset(write_buffer, 0xF0, 512);
@@ -240,55 +192,6 @@ uint8_t test_block_boundaries(void) {
 
     SD_ReadBlock(601, read_buffer);
     TEST_ASSERT_EQUAL(0x0F, read_buffer[0], "First byte of block 601 should be 0x0F");
-
-    return 1;
-}
-
-// Test 9: Performance test (optional - can be slow)
-uint8_t test_sd_performance(void) {
-    uint32_t start_time, end_time;
-    uint32_t write_time, read_time;
-
-    // Prepare data
-    for(int i = 0; i < 512; i++) {
-        write_buffer[i] = i & 0xFF;
-    }
-
-    // Measure write time
-    start_time = HAL_GetTick();
-    for(int i = 0; i < 10; i++) {
-        SD_WriteBlock(700 + i, write_buffer);
-    }
-    end_time = HAL_GetTick();
-    write_time = end_time - start_time;
-
-    // Measure read time
-    start_time = HAL_GetTick();
-    for(int i = 0; i < 10; i++) {
-        SD_ReadBlock(700 + i, read_buffer);
-    }
-    end_time = HAL_GetTick();
-    read_time = end_time - start_time;
-
-    UART_Printf("(10 blocks: W=%lums R=%lums) ", write_time, read_time);
-
-    // Basic sanity check - operations shouldn't take too long
-    TEST_ASSERT(write_time < 5000, "Write shouldn't take more than 5 seconds");
-    TEST_ASSERT(read_time < 2000, "Read shouldn't take more than 2 seconds");
-
-    return 1;
-}
-
-// Test 10: Error handling
-uint8_t test_error_handling(void) {
-    SDResult result;
-
-    // Test edge case blocks
-    memset(write_buffer, 0xEE, 512);
-    result = SD_WriteBlock(0xFFFFFFF0, write_buffer);  // Very high block number
-    // Should either fail gracefully or wrap (card dependent)
-    TEST_ASSERT(result == SD_OK || result == SD_ERROR,
-                "Should handle extreme block numbers");
 
     return 1;
 }
@@ -313,12 +216,10 @@ void Run_SDCard_Tests(void) {
     RUN_TEST(test_write_read_block);
     RUN_TEST(test_overwrite_block);
     RUN_TEST(test_game_save_load);
-    //RUN_TEST(test_shape_save_load);
+
     RUN_TEST(test_shape_exists);
     RUN_TEST(test_data_integrity);
     RUN_TEST(test_block_boundaries);
-   // RUN_TEST(test_sd_performance);
-   // RUN_TEST(test_error_handling);
 
     // Print summary
     UART_Printf("\r\n=== TEST SUMMARY ===\r\n");

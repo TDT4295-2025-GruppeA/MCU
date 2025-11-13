@@ -1,4 +1,3 @@
-//game.c
 #include "../../Inc/Game/game.h"
 #include "../../Inc/Game/State/state_manager.h"
 #include "../../Inc/Game/Rendering/rendering.h"
@@ -84,17 +83,17 @@ void Game_Update(uint32_t current_time)
 static void _HandleInput(void)
 {
     switch(game_state.state) {
-        case GAME_STATE_PLAYING:
-            if(adc_buttons.left_pressed) {
-                GameLogic_MovePlayer(&game_state, -STRAFE_SPEED);
-            }
-            if(adc_buttons.right_pressed) {
-                GameLogic_MovePlayer(&game_state, STRAFE_SPEED);
-            }
-            if(adc_buttons.left_long_press) {
-                StateManager_TransitionTo(GAME_STATE_PLAYING);
-            }
-            break;
+		case GAME_STATE_PLAYING:
+			if(adc_buttons.left) {
+				GameLogic_MovePlayer(&game_state, -STRAFE_SPEED);
+			}
+			if(adc_buttons.right) {
+				GameLogic_MovePlayer(&game_state, STRAFE_SPEED);
+			}
+			if(adc_buttons.left_long_press || adc_buttons.right_long_press) {
+				StateManager_TransitionTo(GAME_STATE_PLAYING);
+			}
+			break;
 
         case GAME_STATE_PAUSED:
             if(adc_buttons.both_pressed) {

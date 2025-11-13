@@ -95,7 +95,6 @@ SDResult Storage_SaveShape(uint32_t shape_id, const Shape3D* shape) {
     // Check if it fits in one block (with header)
     if(total_size > 488) {  // 512 - sizeof(header basics)
         UART_Printf("Shape %lu too large for single block!\r\n", shape_id);
-        // For larger shapes, we'd need multi-block storage
         return SD_ERROR;
     }
 

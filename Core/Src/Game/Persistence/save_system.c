@@ -131,6 +131,3 @@ void SaveSystem_ForceResetShapes(void)
     Storage_InitializeShapes();
     UART_Printf("New shapes written to SD card!\r\n");
 }
-
-
-

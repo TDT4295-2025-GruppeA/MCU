@@ -1,4 +1,3 @@
-// obstacles.h - Obstacle spawning and management
 #ifndef OBSTACLES_H
 #define OBSTACLES_H
 

@@ -1,4 +1,3 @@
-// collision.h - Collision detection system
 #ifndef COLLISION_H
 #define COLLISION_H
 

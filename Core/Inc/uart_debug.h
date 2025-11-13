@@ -1,4 +1,3 @@
-
 #ifndef INC_UART_DEBUG_H_
 #define INC_UART_DEBUG_H_
 #include "stm32u5xx_hal.h"

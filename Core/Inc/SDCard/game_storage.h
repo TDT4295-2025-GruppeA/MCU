@@ -1,4 +1,3 @@
-
 #ifndef INC_SDCARD_GAME_STORAGE_H_
 #define INC_SDCARD_GAME_STORAGE_H_
 

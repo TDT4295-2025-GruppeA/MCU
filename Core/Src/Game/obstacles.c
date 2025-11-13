@@ -1,4 +1,3 @@
-//obstacles.h
 #include "./Game/obstacles.h"
 #include "./Game/shapes.h"
 #include <stdlib.h>
@@ -19,7 +18,7 @@ void Obstacles_Init(void)
     Obstacles_Reset();
 
     // Spawn initial obstacles ahead of player (positive Z)
-    for(int i = 0; i < 3; i++)
+    for(int i = 0; i < MAX_OBSTACLES; i++)
     {
         Obstacles_Spawn(OBSTACLE_SPAWN_DIST + (i * OBSTACLE_SPACING));
     }
@@ -57,34 +56,15 @@ void Obstacles_Spawn(float z_position)
             Obstacle* obs = &obstacle_pool[i];
             obs->active = 1;
 
-            // Randomly choose shape
-            int shape_type = rand() % 2;
-            switch(shape_type)
-            {
-                case 0:
-                    obs->shape_id = SHAPE_CUBE;
-                    obs->width = 16;
-                    obs->height = 16;
-                    obs->depth = 16;
-                    break;
-                case 1:
-                	obs->shape_id = SHAPE_CUBE;
-					obs->width = 16;
-					obs->height = 16;
-					obs->depth = 16;
-					break;
-                case 2:
-                	obs->shape_id = SHAPE_CUBE;
-					obs->width = 16;
-					obs->height = 16;
-					obs->depth = 16;
-					break;
-            	}
+            obs->shape_id = SHAPE_CUBE;
+            obs->width = 4;
+            obs->height = 4;
+            obs->depth = 4;
 
             // Random X position within bounds
-            int x_range = WORLD_MAX_X - WORLD_MIN_X;
+            int x_range = (WORLD_MAX_X) - (WORLD_MIN_X);
             obs->pos.x = (float)(rand() % x_range) + WORLD_MIN_X;
-            obs->pos.y = 0;
+            obs->pos.y = 1;
             obs->pos.z = z_position;
 
             UART_Printf("Spawned obstacle %d at [%d, %d]\r\n",
@@ -115,7 +95,7 @@ void Obstacles_Update(float player_z, float delta_time)
         if(obstacle_pool[i].active)
         {
             // Remove obstacles that have passed behind the player
-            if(obstacle_pool[i].pos.z < -30)  // Behind player
+            if(obstacle_pool[i].pos.z < 2)  // Behind player
             {
                 obstacle_pool[i].active = 0;
                 obstacles_passed++;
