@@ -7,6 +7,15 @@ def frame_start():
 
 # Helper: frame end (render all instances, clear staging)
 def frame_end():
+    dbg("Frame received")
+    global last_frame_time
+    current_time = time.time()
+    if last_frame_time is not None:
+        frame_delta = current_time - last_frame_time
+        dbg(f"[PERF] Frame delta: {frame_delta:.3f}s ({1/frame_delta:.1f} FPS)")
+    last_frame_time = current_time
+    
+    start_time = time.time()
     dbg("Frame End (helper)")
     dbg(f"[DEBUG] Clearing {len(obs_objs)} previous objects")
     for ob in obs_objs:
@@ -44,6 +53,9 @@ def frame_end():
                 dbg(f"Error rendering box for shape_id={mid}: {e}")
     dbg(f"[DEBUG] Frame render complete. {len(obs_objs)} objects now visible.")
     staging_objs.clear()
+    
+    render_time = time.time() - start_time
+    dbg(f"[PERF] Frame render time: {render_time:.3f}s, Objects: {len(obs_objs)}")
 import argparse
 import struct
 import threading
@@ -54,7 +66,7 @@ Q16_16_SCALE = 65536.0
 
 from vpython import box, vector, color, rate, scene, label, vertex, triangle
 # Toggle: use custom shapes (triangle mesh) or legacy box rendering
-USE_CUSTOM_SHAPES = True
+USE_CUSTOM_SHAPES = True  # Changed to False for better performance
 
 try:
     import serial
@@ -91,6 +103,7 @@ obs_objs = []  # currently visible VPython objects
 staging_objs = []  # descriptors for next frame: dicts with keys: id, pos, rot
 info_label = None
 DEBUG = False
+last_frame_time = None
 
 def dbg(*args, **kwargs):
     if DEBUG:
@@ -195,6 +208,7 @@ def handle_add_instance(packet):
     with lock:
         staging_objs.append(desc)
         if is_last_model:
+            print("Calling frame_end")
             frame_end()
 
 
@@ -208,6 +222,15 @@ def handle_frame_start():
         staging_objs.clear()
 
 def handle_frame_end():
+    print("Frame received")
+    global last_frame_time
+    current_time = time.time()
+    if last_frame_time is not None:
+        frame_delta = current_time - last_frame_time
+        print(f"[PERF] Frame delta: {frame_delta:.3f}s ({1/frame_delta:.1f} FPS)")
+    last_frame_time = current_time
+    
+    start_time = time.time()
     dbg("Frame End")
     with lock:
         # Hide and clear existing objects
@@ -249,6 +272,9 @@ def handle_frame_end():
 
         # Clear staging descriptors after swapping
         staging_objs.clear()
+    
+    render_time = time.time() - start_time
+    print(f"[PERF] Frame render time: {render_time:.3f}s, Objects: {len(obs_objs)}")
 
 def handle_reset():
     dbg("Reset")
@@ -271,7 +297,7 @@ def create_scene():
     scene.title = "MCU -> FPGA Simulator (visualizer)"
     scene.width = 1200
     scene.height = 900
-    scene.center = vector(0, 8, 12)
+    scene.center = vector(0, 2, 0)
     scene.forward = vector(0, -0.25, -1)
     scene.autoscale = False
     scene.background = color.gray(0.2)
@@ -346,7 +372,7 @@ def main():
     parser = argparse.ArgumentParser(description='FPGA visualizer / simulator')
     # parser.add_argument('--mode', choices=['keyboard', 'serial'], default='keyboard', help='Input mode: keyboard or serial')
     parser.add_argument('--serial', help='Serial port to listen for packets')
-    parser.add_argument('--baud', type=int, default=115200, help='Serial baudrate')
+    parser.add_argument('--baud', type=int, default=230400, help='Serial baudrate')
     parser.add_argument('--debug', action='store_true', help='Enable debug printing')
     args = parser.parse_args()
     global DEBUG
@@ -360,8 +386,19 @@ def main():
     # scene.bind('keydown', keydown)
 
     global forward
+    frame_count = 0
+    last_time = time.time()
     while True:
-        rate(60)
+        rate(120)
+        frame_count += 1
+        current_time = time.time()
+        if frame_count % 60 == 0:  # Every ~0.5 seconds at 120 FPS
+            fps = 60 / (current_time - last_time)
+            last_time = current_time
+            with lock:
+                obj_count = len(obs_objs)
+            info_label.text = f"FPS: {fps:.1f}, Objects: {obj_count}"
+            print(f"[PERF] FPS: {fps:.1f}, Objects: {obj_count}")
 
 
 if __name__ == '__main__':
