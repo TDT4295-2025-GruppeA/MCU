@@ -1,4 +1,3 @@
-//obstacles.h
 #include "./Game/obstacles.h"
 #include "./Game/shapes.h"
 #include <stdlib.h>
@@ -22,7 +21,7 @@ void Obstacles_Init(void)
     Obstacles_Reset();
 
     // Spawn initial obstacles ahead of player (positive Z)
-    for(int i = 0; i < 3; i++)
+    for(int i = 0; i < MAX_OBSTACLES; i++)
     {
     Obstacles_Spawn(OBSTACLE_SPAWN_DIST + (i * OBSTACLE_SPACING));
     }
@@ -102,7 +101,7 @@ void Obstacles_Update(Position* player_pos, float delta_time)
         if(obstacle_pool[i].active)
         {
             // Remove obstacles that have passed behind the player
-            if(obstacle_pool[i].pos.z < player_pos->z - 30)  // Behind player
+            if(obstacle_pool[i].pos.z < 2)  // Behind player
             {
                 obstacle_pool[i].active = 0;
                 obstacles_passed++;

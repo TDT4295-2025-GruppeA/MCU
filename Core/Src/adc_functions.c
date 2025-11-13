@@ -1,4 +1,3 @@
-
 #include "adc_functions.h"
 #include "main.h"
 

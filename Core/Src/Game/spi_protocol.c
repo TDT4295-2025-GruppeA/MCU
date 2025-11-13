@@ -1,4 +1,3 @@
-//rendering.c
 #include "./Game/spi_protocol.h"
 #include "./Utilities/transform.h"
 #include <string.h>
@@ -82,7 +81,6 @@ void SPI_SendReset(void)
 // Updated: Now takes model_id as parameter
 void SPI_SendShapeToFPGA(uint8_t model_id, Shape3D* shape)
 {
-    // Begin upload now takes model ID as parameter
     uint8_t begin_packet[2];
     begin_packet[0] = CMD_BEGIN_UPLOAD;
     begin_packet[1] = model_id;
@@ -131,7 +129,6 @@ void SPI_SendShapeToFPGA(uint8_t model_id, Shape3D* shape)
                 model_id, shape->triangle_count);
 }
 
-// Updated: Now includes is_last_model parameter
 void SPI_AddModelInstance(uint8_t shape_id, Position* pos, float* rotation_matrix, uint8_t is_last_model)
 {
     uint8_t packet[51];
@@ -189,13 +186,4 @@ void SPI_AddModelInstance(uint8_t shape_id, Position* pos, float* rotation_matri
     }
 
     SPI_TransmitPacket((uint8_t*)packet, 51);
-
-    #ifdef DEBUG_SPI
-    UART_Printf("SPI: Added instance of model %d at [%d,%d,%d]%s\r\n",
-                    shape_id,
-                    (int)pos->x,
-                    (int)pos->y,
-                    (int)pos->z,
-                    is_last_model ? " (last model)" : "");
-    #endif
 }

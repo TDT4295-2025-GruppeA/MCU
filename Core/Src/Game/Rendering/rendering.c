@@ -1,4 +1,3 @@
-//rendering.c
 #include "../../../Inc/Game/Rendering/rendering.h"
 #include "../../../Inc/Game/spi_protocol.h"
 #include "../../../Inc/Game/shapes.h"
@@ -14,6 +13,8 @@ void Renderer_Init(SPI_HandleTypeDef* hspi)
 {
     spi_handle = hspi;
     SPI_Protocol_Init(hspi);
+    uint8_t reset_data[] = {0x55, 0x55};
+    SPI_TransmitPacket(reset_data, 2);
     UART_Printf("Renderer initialized\r\n");
 }
 
@@ -44,7 +45,7 @@ void Renderer_DrawFrame(GameState* state)
         }
     }
 
-    // 3. Render obstacles (no relative position needed!)
+    // 3. Render obstacles
     int rendered = 0;
     uint8_t is_last_model = 0;
 

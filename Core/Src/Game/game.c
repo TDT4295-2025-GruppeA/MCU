@@ -1,4 +1,3 @@
-//game.c
 #include "../../Inc/Game/game.h"
 #include "../../Inc/Game/State/state_manager.h"
 #include "../../Inc/Game/Rendering/rendering.h"
@@ -125,18 +124,17 @@ void Game_Update(uint32_t current_time)
 static void _HandleInput(void)
 {
     switch(game_state.state) {
-        case GAME_STATE_PLAYING: {
-            // Button input: right=1, left=-1, none=0
-            float input = 0.0f;
-            if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13) == 0) {
-                // input = 1.0f; // right
-            } else {
-                input = -1.0f; // left
-            }
-            // For joystick: input = joystick_value [-1,1]
-            UpdatePlayerStrafe(&game_state, input);
-            break;
-        }
+		case GAME_STATE_PLAYING:
+			if(adc_buttons.left) {
+				UpdatePlayerStrafe(&game_state, -1.0f);
+			}
+			if(adc_buttons.right) {
+				UpdatePlayerStrafe(&game_state, 1.0f);
+			}
+			if(adc_buttons.left_long_press || adc_buttons.right_long_press) {
+				StateManager_TransitionTo(GAME_STATE_PLAYING);
+			}
+			break;
 
         case GAME_STATE_PAUSED:
             if(adc_buttons.both_pressed) {

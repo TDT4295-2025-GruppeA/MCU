@@ -1,12 +1,11 @@
-// collision.c - Collision detection implementation
 #include "./Game/collision.h"
 #include "./Game/shapes.h"
 #include <math.h>
 
 // Player collision box dimensions
-#define PLAYER_WIDTH  10.0f
-#define PLAYER_HEIGHT 5.0f
-#define PLAYER_DEPTH  10.0f
+#define PLAYER_WIDTH  2.0f
+#define PLAYER_HEIGHT 3.0f
+#define PLAYER_DEPTH  3.0f
 
 // Check player collision with obstacles
 CollisionResult Collision_CheckPlayer(Position* player_pos, Obstacle* obstacles, uint8_t obstacle_count)
@@ -27,7 +26,7 @@ CollisionResult Collision_CheckPlayer(Position* player_pos, Obstacle* obstacles,
         {
             if(Collision_BoxIntersect(player_pos, Shapes_GetPlayer()->width, Shapes_GetPlayer()->height, Shapes_GetPlayer()->depth,
                                      &obstacles[i].pos, obstacles[i].width,
-                                     obstacles[i].height, obstacles[i].depth))
+                                     obstacles[i].height, obstacles[i].depth-1))
             {
                 result.type = COLLISION_OBSTACLE;
                 result.obstacle_index = i;
@@ -58,13 +57,17 @@ CollisionResult Collision_CheckPlayer(Position* player_pos, Obstacle* obstacles,
 uint8_t Collision_BoxIntersect(Position* pos1, float w1, float h1, float d1,
                                Position* pos2, float w2, float h2, float d2)
 {
-    // Calculate half-sizes
-    float hw1 = w1 / 2.0f;
-    float hh1 = h1 / 2.0f;
-    float hd1 = d1 / 2.0f;
-    float hw2 = w2 / 2.0f;
-    float hh2 = h2 / 2.0f;
-    float hd2 = d2 / 2.0f;
+    // More forgiving on X-axis, normal on Z-axis
+    float x_scale = 0.7f;  // 70% of actual size for X
+    float y_scale = 0.8f;  // 80% for Y
+    float z_scale = 0.9f;  // 90% for Z (front/back)
+
+    float hw1 = (w1 / 2.0f) * x_scale;
+    float hh1 = (h1 / 2.0f) * y_scale;
+    float hd1 = (d1 / 2.0f) * z_scale;
+    float hw2 = (w2 / 2.0f) * x_scale;
+    float hh2 = (h2 / 2.0f) * y_scale;
+    float hd2 = (d2 / 2.0f) * z_scale;
 
     // Check overlap on all axes
     if(fabsf(pos1->x - pos2->x) >= (hw1 + hw2)) return 0;
@@ -114,7 +117,6 @@ void Collision_ResolvePlayer(Position* player_pos, CollisionResult* result)
     }
     else if(result->type == COLLISION_OBSTACLE && result->penetration_depth > 0)
     {
-        // Simple resolution: stop forward movement or push back
         player_pos->z -= result->penetration_depth;
     }
 }

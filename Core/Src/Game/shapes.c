@@ -1,4 +1,3 @@
-// shapes.c - 3D shape creation implementation
 #include "./Game/shapes.h"
 #include <math.h>
 #include <string.h>
@@ -32,8 +31,7 @@ void Shapes_CreatePlayer(Shape3D* shape)
     shape->vertex_count = 4;
     shape->triangle_count = 4;
 
-    int16_t s = 1;  // Half-size
-
+    int16_t s = 1;
     // Define vertices
     shape->vertices[0] = (Vertex3D){  s,  s, -s}; // Left wing
     shape->vertices[1] = (Vertex3D){  0, -s/2, -s}; // Top

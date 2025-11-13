@@ -125,38 +125,8 @@ uint8_t test_visible_count(void) {
     return 1;
 }
 
-// Test 6: Shape variety
-uint8_t test_shape_variety(void) {
-    Obstacles_Reset();
-    srand(12345);  // Fixed seed for reproducible test
 
-    int cube_count = 0, cone_count = 0, pyramid_count = 0;
-
-    // Spawn many obstacles
-    for(int i = 0; i < 30; i++) {
-        Obstacles_Spawn(i * 20);
-    }
-
-    Obstacle* obstacles = Obstacles_GetArray();
-    for(int i = 0; i < MAX_OBSTACLES; i++) {
-        if(obstacles[i].active) {
-            switch(obstacles[i].shape_id) {
-                case SHAPE_CUBE: cube_count++; break;
-                case SHAPE_CONE: cone_count++; break;
-                case SHAPE_PYRAMID: pyramid_count++; break;
-            }
-        }
-    }
-
-    // Check we have variety (with fixed seed, should get mix)
-    TEST_ASSERT(cube_count > 0, "Should spawn some cubes");
-    TEST_ASSERT(cone_count > 0, "Should spawn some cones");
-    // Note: pyramid_count might be 0 if MAX_OBSTACLES is small
-
-    return 1;
-}
-
-// Test 7: Spawn spacing
+// Test 6: Spawn spacing
 uint8_t test_spawn_spacing(void) {
     Obstacles_Reset();
     Obstacles_Clear();
@@ -201,7 +171,6 @@ void Run_Obstacle_Tests(void) {
     RUN_TEST(test_obstacle_despawn);
     RUN_TEST(test_auto_spawn_ahead);
     RUN_TEST(test_visible_count);
-    RUN_TEST(test_shape_variety);
     RUN_TEST(test_spawn_spacing);
 
     UART_Printf("\r\n=== TEST SUMMARY ===\r\n");

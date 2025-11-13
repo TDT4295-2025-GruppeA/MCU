@@ -39,7 +39,6 @@ typedef enum {
     SHAPE_PYRAMID = 0x03,
     SHAPE_SPHERE = 0x04,
 
-    // Aliases for compatibility
     SHAPE_ID_PLAYER = SHAPE_PLAYER,
 } ShapeID;
 
