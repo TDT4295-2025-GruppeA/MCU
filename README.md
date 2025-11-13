@@ -22,10 +22,10 @@ A real-time 3D endless runner game using STM32U5 microcontroller for game logic 
 - **Collision Detection**: AABB (Axis-Aligned Bounding Box) system
 - **Testing Framework**: Unit tests
 - **Debug Interface**: UART command system for runtime testing
+- **Transformation**: Transformations of shapes sent to FPGA
 
 ### In Progress
 
-- Transformations of shapes sent to FPGA
 - Difficulty progression system
 - Sound effects integration
 
@@ -297,5 +297,5 @@ The project includes comprehensive unit tests covering:
 
 ---
 
-*Last Updated: November 2024*  
+*Last Updated: November 2025*  
 *Version: 1.0.0*
