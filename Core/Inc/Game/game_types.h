@@ -31,7 +31,7 @@ typedef enum {
 } SPI_Command;
 
 // ========== Shape IDs ==========
-// ADD: Aliases for compatibility with new code
+// Aliases for compatibility
 typedef enum {
     SHAPE_PLAYER = 0x00,
     SHAPE_CUBE   = 0x01,

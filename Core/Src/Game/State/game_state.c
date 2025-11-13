@@ -28,7 +28,7 @@ void StateManager_Reset(void)
     memset(game_state_ptr, 0, sizeof(GameState));
     game_state_ptr->player_pos.x = 0;
     game_state_ptr->player_pos.y = 0;
-    game_state_ptr->player_pos.z = 0;
+    game_state_ptr->player_pos.z = 2;
     game_state_ptr->state = GAME_STATE_MENU;
     game_state_ptr->score = 0;
     game_state_ptr->moving_forward = 0;

@@ -16,5 +16,6 @@ void SaveSystem_RecordGame(uint32_t score, uint32_t time_played);
 uint32_t SaveSystem_GetHighScore(void);
 uint8_t SaveSystem_IsNewHighScore(uint32_t score);
 GameStats* SaveSystem_GetStats(void);
+void SaveSystem_ForceResetShapes(void);
 
 #endif /* INC_GAME_PERSISTENCE_SAVE_SYSTEM_H_ */

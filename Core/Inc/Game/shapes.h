@@ -1,11 +1,3 @@
-/*
- * shapes.h
- *
- *  Created on: Sep 15, 2025
- *      Author: jornik
- */
-
-// shapes.h - 3D shape creation and management
 #ifndef SHAPES_H
 #define SHAPES_H
 

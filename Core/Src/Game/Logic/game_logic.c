@@ -20,7 +20,13 @@ void GameLogic_Update(GameState* state, float delta_time)
     if(state->moving_forward) {
         float distance_moved = FORWARD_SPEED * delta_time;
         state->total_distance += distance_moved;
+        /*
+         if(state->player_pos.z > 10) {
+        	state->player_pos.z = 2.0;
+        }
+        else state->player_pos.z += 0.1;
 
+         * */
         // Move obstacles toward player
         Obstacles_MoveTowardPlayer(distance_moved);
     }
