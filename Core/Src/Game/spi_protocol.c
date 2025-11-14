@@ -187,3 +187,62 @@ void SPI_AddModelInstance(uint8_t shape_id, Position* pos, float* rotation_matri
 
     SPI_TransmitPacket((uint8_t*)packet, 51);
 }
+
+void SPI_SetCameraPosition(Position* pos, float* rotation_matrix)
+{
+    uint8_t packet[51];
+    memset(packet, 0, 51);
+
+    packet[0] = CMD_POSITION_CAMERA;
+    packet[1] = 0x00;  // Last model flag
+    packet[2] = 0x00;
+
+    // Position in fixed-point
+    int32_t x_fixed = (int32_t)(pos->x * 65536.0f);
+    int32_t y_fixed = (int32_t)(pos->y * 65536.0f);
+    int32_t z_fixed = (int32_t)(pos->z * 65536.0f);
+
+    // Pack position
+    packet[3] = (x_fixed >> 24) & 0xFF;
+    packet[4] = (x_fixed >> 16) & 0xFF;
+    packet[5] = (x_fixed >> 8) & 0xFF;
+    packet[6] = x_fixed & 0xFF;
+
+    packet[7] = (y_fixed >> 24) & 0xFF;
+    packet[8] = (y_fixed >> 16) & 0xFF;
+    packet[9] = (y_fixed >> 8) & 0xFF;
+    packet[10] = y_fixed & 0xFF;
+
+    packet[11] = (z_fixed >> 24) & 0xFF;
+    packet[12] = (z_fixed >> 16) & 0xFF;
+    packet[13] = (z_fixed >> 8) & 0xFF;
+    packet[14] = z_fixed & 0xFF;
+
+    // Pack rotation matrix (or identity if NULL)
+    if(rotation_matrix != NULL) {
+        // Use provided matrix
+        for(int i = 0; i < 9; i++) {
+            int32_t value = (int32_t)(rotation_matrix[i] * 65536.0f);
+            int offset = 15 + (i * 4);
+            packet[offset] = (value >> 24) & 0xFF;
+            packet[offset+1] = (value >> 16) & 0xFF;
+            packet[offset+2] = (value >> 8) & 0xFF;
+            packet[offset+3] = value & 0xFF;
+        }
+    } else {
+        // Identity matrix
+        int32_t one = 65536;  // 1.0 in fixed point
+    	int32_t zero = 0;
+
+    	for(int i = 0; i < 9; i++) {
+    		int32_t value = (i == 0 || i == 4 || i == 8) ? one : zero;
+    		int offset = 15 + (i * 4);
+    		packet[offset] = (value >> 24) & 0xFF;
+    		packet[offset+1] = (value >> 16) & 0xFF;
+    		packet[offset+2] = (value >> 8) & 0xFF;
+    		packet[offset+3] = value & 0xFF;
+    	}
+    }
+
+    SPI_TransmitPacket((uint8_t*)packet, 51);
+}

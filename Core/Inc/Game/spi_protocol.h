@@ -12,6 +12,7 @@
 #define CMD_BEGIN_UPLOAD    0xA0
 #define CMD_UPLOAD_TRIANGLE 0xA1
 #define CMD_ADD_INSTANCE    0xB0
+#define CMD_POSITION_CAMERA 0xC0
 
 // Initialize SPI protocol handler
 void SPI_Protocol_Init(SPI_HandleTypeDef* spi_handle);
@@ -21,4 +22,5 @@ void SPI_TransmitPacket(uint8_t* data, uint16_t size);
 void SPI_SendReset(void);
 void SPI_SendShapeToFPGA(uint8_t model_id, Shape3D* shape);  //Updated to: includes model_id parameter
 void SPI_AddModelInstance(uint8_t shape_id, Position* pos, float* rotation_matrix, uint8_t is_last_model);  // Added is_last_model parameter
+void SPI_SetCameraPosition(Position* pos, float* rotation_matrix);
 #endif // SPI_PROTOCOL_H

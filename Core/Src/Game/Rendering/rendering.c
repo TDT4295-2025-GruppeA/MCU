@@ -90,6 +90,11 @@ void Renderer_DrawFrame(GameState* state)
     Position player_render_pos = {0, 0, 0};
     SPI_AddModelInstance(SHAPE_ID_PLAYER, &player_render_pos,
                         player_rotation.m, 1);
+
+    Position camera_pos = {0, 10, -5};
+    Matrix3x3 camera_rotation;
+    Matrix_RotateX(&camera_rotation, 20.0f);
+    SPI_SetCameraPosition(&camera_pos, camera_rotation.m);
 }
 
 void Renderer_ClearScene(void)
