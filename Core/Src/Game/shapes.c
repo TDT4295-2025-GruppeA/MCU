@@ -52,7 +52,7 @@ void Shapes_CreatePlayer(Shape3D* shape)
     // Bottom face
     shape->triangles[3] = (Triangle){3, 0, 2};
 
-
+    Shapes_CalculateBounds(shape, &shape->width, &shape->height, &shape->depth);
 }
 
 // Create cube shape
@@ -95,6 +95,8 @@ void Shapes_CreateCube(Shape3D* shape)
     // Left face
     shape->triangles[10] = (Triangle){7, 2, 0};
     shape->triangles[11] = (Triangle){0, 6, 7};
+
+    Shapes_CalculateBounds(shape, &shape->width, &shape->height, &shape->depth);
 }
 
 // Create cone shape

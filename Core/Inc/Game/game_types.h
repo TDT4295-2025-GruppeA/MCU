@@ -4,7 +4,8 @@
 #include <stdint.h>
 
 // ========== Game Constants ==========
-#define UPDATE_INTERVAL 10      // ms between updates
+#define UPDATE_INTERVAL 5      // ms between updates
+#define RENDER_INTERVAL 20      // ms between updates
 #define FORWARD_SPEED   10.0f     // units per second
 #define PLAYER_STRAFE_ACCEL     100.0f   // units/sec^2 (acceleration)
 #define PLAYER_STRAFE_DECEL (PLAYER_STRAFE_ACCEL * 2.0f)

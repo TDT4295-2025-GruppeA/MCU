@@ -33,7 +33,12 @@ void Renderer_UploadShapes(void)
 void Renderer_DrawFrame(GameState* state)
 {
     if(!state) return;
-
+    
+    // This helps for some reasone.
+    // Maybe it clears out garbage data on FPGA side?
+    uint8_t reset_data[] = {0x00, 0x00, 0x00, 0x00};
+    SPI_TransmitPacket(reset_data, 4);
+    
     // 2. Count visible obstacles
     Obstacle* obstacles = Obstacles_GetArray();
     int visible_count = 0;

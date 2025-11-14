@@ -57,6 +57,7 @@ static void UpdatePlayerStrafe(GameState* state, float input)
 // Global game state
 GameState game_state;
 static uint32_t last_update_time = 0;
+static uint32_t last_render_time = 0;
 static ADCButtonState adc_buttons;
 
 void Game_Init(void)
@@ -114,10 +115,15 @@ void Game_Update(uint32_t current_time)
         	UART_Printf("Collision event!  \r\n");
         } else {
             GameLogic_UpdateScore(&game_state);
-            Renderer_DrawFrame(&game_state);
-
         }
     }
+
+    // Render slower than game loop.
+    if (current_time - last_render_time > RENDER_INTERVAL) {
+        last_render_time = current_time;
+        Renderer_DrawFrame(&game_state);
+    }
+
 }
 
 // Static function implementation
