@@ -24,13 +24,12 @@ Each test suite tracks:
 - Tests run
 - Tests passed  
 - Tests failed
-- Execution time (for performance tests)
 
 ## Test Suites
 
 ### 1. Collision Detection Tests (`test_collision.c`)
 
-**Coverage**: 6 tests, 100% branch coverage
+**Coverage**: 6 tests
 
 #### Tests:
 - `test_box_intersection_overlap`: Verifies AABB collision detection
@@ -50,7 +49,7 @@ Result: Overlapping (X axes intersect)
 
 ### 2. Obstacle Management Tests (`test_obstacles.c`)
 
-**Coverage**: 7 tests, 90% code coverage
+**Coverage**: 6 tests
 
 #### Tests:
 - `test_obstacle_initialization`: Verifies clean startup state
@@ -58,7 +57,6 @@ Result: Overlapping (X axes intersect)
 - `test_obstacle_despawn`: Validates despawn mechanics
 - `test_auto_spawn_ahead`: Validates spawning in spesific pattern ahead of player
 - `test_visible_count`: Validates only x-amount visible at given time
-- `test_shape_variety`: Validates that different shapes get spawned
 - `test_spawn_spacing`: Validates that spawning happenes within given spaces
 
 
@@ -274,12 +272,7 @@ void Debug_PrintHex(uint8_t* data, size_t len) {
 }
 ```
 
-## References
-
-- [Unity Test Framework](http://www.throwtheswitch.org/unity) - Inspiration
-- [CppUTest](http://cpputest.github.io/) - Alternative framework
-
 ---
 
 *Test Documentation Version 1.0*  
-*Last Updated: November 2024*
+*Last Updated: November 2025*

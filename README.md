@@ -97,13 +97,23 @@ Core/
 │   ├── peripherals.h       # Hardware initialization
 │   ├── uart_debug.h        # Debug output
 │   ├── adc_functions.h     # ADC helpers
+|   ├── buttons.h           # Button logic
 │   ├── Game/
-│   │   ├── game.h          # Main game logic
+│   │   ├── game.h          # Main game 
+│   │   ├── game_types.h    # Main game constants and types
 │   │   ├── collision.h     # Collision detection
 │   │   ├── obstacles.h     # Obstacle management
 │   │   ├── shapes.h        # 3D shape definitions
 │   │   ├── input.h         # Input processing
 │   │   └── spi_protocol.h  # FPGA communication
+│   │   ├──Logic/
+│   │   │		└── game_logic.h         # Game logic
+│   │   ├──Persistence/
+│   │   │		└── save_system.h        # Game save system
+│   │   ├──Rendering/
+│   │   │		└── rendering.h          # Game rendering for fpga
+│   │   ├──State/
+│   │   │		└── state_manager.h      # Game state
 │   ├── SDCard/
 │   │   ├── sd_card.h       # SD card driver
 │   │   └── game_storage.h  # Save/load system
@@ -182,9 +192,8 @@ sudo screen /dev/ttyACM0 115200
 ### Controls
 
 **ADC Buttons:**
-- Button 1: Move left
-- Button 2: Move right
-- Both: Pause/Resume
+- Joystick left: Move left
+- Joystick right: Move right
 - Hold Button 1: Reset game
 
 
