@@ -62,7 +62,7 @@ void Obstacles_Spawn(float z_position)
             obs->depth = 4;
 
             // Random X position within bounds
-            int x_range = (WORLD_MAX_X+10) - (WORLD_MIN_X);
+            int x_range = (WORLD_MAX_X) - (WORLD_MIN_X);
             obs->pos.x = (float)(rand() % x_range) + WORLD_MIN_X;
             obs->pos.y = 1;
             obs->pos.z = z_position;
