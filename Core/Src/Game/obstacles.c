@@ -62,7 +62,7 @@ void Obstacles_Spawn(float z_position)
             obs->depth = 4;
 
             // Random X position within bounds
-            int x_range = (WORLD_MAX_X) - (WORLD_MIN_X);
+            int x_range = (WORLD_MAX_X+10) - (WORLD_MIN_X);
             obs->pos.x = (float)(rand() % x_range) + WORLD_MIN_X;
             obs->pos.y = 1;
             obs->pos.z = z_position;
@@ -113,7 +113,7 @@ void Obstacles_Update(float player_z, float delta_time)
     // Spawn new obstacles ahead when needed
     if(auto_spawn_enabled && furthest_z < OBSTACLE_SPAWN_DIST)
     {
-        next_spawn_z = furthest_z + OBSTACLE_SPACING + (rand() % 20);
+        next_spawn_z = furthest_z + OBSTACLE_SPACING + (rand() % 10);
         Obstacles_Spawn(next_spawn_z);
     }
 }

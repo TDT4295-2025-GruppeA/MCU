@@ -74,7 +74,6 @@ void Game_Update(uint32_t current_time)
         } else {
             GameLogic_UpdateScore(&game_state);
             Renderer_DrawFrame(&game_state);
-
         }
     }
 }

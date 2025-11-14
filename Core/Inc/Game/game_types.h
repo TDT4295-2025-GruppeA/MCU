@@ -13,9 +13,9 @@
 // 3D Shape constants
 #define MAX_VERTICES    32       // Max vertices per shape
 #define MAX_TRIANGLES   16       // Max triangles per shape
-#define MAX_OBSTACLES   20       // Max obstacles on screen
+#define MAX_OBSTACLES   25       // Max obstacles on screen
 #define OBSTACLE_SPAWN_DIST 50  // Distance ahead to spawn obstacles
-#define OBSTACLE_SPACING 6      // Min spacing between obstacles
+#define OBSTACLE_SPACING 5      // Min spacing between obstacles
 
 // ========== SPI Protocol Commands ==========
 typedef enum {
@@ -101,6 +101,8 @@ typedef struct {
     float next_spawn_z;
     float total_distance;
     uint32_t game_start_time;  // Track when game started (duration)
+    float current_speed_multiplier;
+    float base_speed;
 } GameState;
 
 // ========== Game Statistics ==========

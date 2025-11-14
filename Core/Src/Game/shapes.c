@@ -41,14 +41,14 @@ void Shapes_CreatePlayer(Shape3D* shape)
     // Back face
     shape->triangles[0] = (Triangle){0, 2, 1};
 
-    // Back face
+    // Left face
     shape->triangles[1] = (Triangle){1, 2, 3};
 
-    // Top face
+    // Right face
     shape->triangles[2] = (Triangle){1, 3, 0};
 
     // Bottom face
-    shape->triangles[3] = (Triangle){3, 0, 2};
+    shape->triangles[3] = (Triangle){3, 2, 0};
 
 
 }

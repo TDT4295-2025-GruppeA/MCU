@@ -16,15 +16,25 @@ void GameLogic_Update(GameState* state, float delta_time)
 {
     if(!state || state->state != GAME_STATE_PLAYING) return;
 
-    // Track distance "traveled"
-    if(state->moving_forward) {
-        float distance_moved = FORWARD_SPEED * delta_time;
-        state->total_distance += distance_moved;
-        // Move obstacles toward player
-        Obstacles_MoveTowardPlayer(distance_moved);
+    float distance_milestone = 100.0f;
+    float speed_increase = 0.10f;
+    float max_multiplier = 3.0f;
+
+    state->current_speed_multiplier = 1.0f + (state->total_distance / distance_milestone) * speed_increase;
+
+    if(state->current_speed_multiplier > max_multiplier) {
+        state->current_speed_multiplier = max_multiplier;
     }
 
-    // Update obstacles (spawning/despawning)
+    // Apply speed multiplier
+    float current_speed = FORWARD_SPEED * state->current_speed_multiplier;
+
+    if(state->moving_forward) {
+        float distance_moved = current_speed * delta_time;
+        state->total_distance += distance_moved;
+        Obstacles_MoveTowardPlayer(distance_moved + delta_time);
+    }
+
     Obstacles_Update(0, delta_time);
 }
 
@@ -62,4 +72,5 @@ void GameLogic_UpdateScore(GameState* state)
     uint32_t obstacles_passed = Obstacles_CheckPassed(0);
     state->score = (uint32_t)state->total_distance +
                    (obstacles_passed * 10 * score_multiplier);
+
 }

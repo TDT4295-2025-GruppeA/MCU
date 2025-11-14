@@ -33,6 +33,8 @@ void Renderer_UploadShapes(void)
 void Renderer_DrawFrame(GameState* state)
 {
     if(!state) return;
+    uint8_t padding_data[] = {0xFF, 0xFF};
+    SPI_TransmitPacket(padding_data, 2);
 
     // 1. Render player at origin with banking
     Matrix3x3 player_rotation;
@@ -60,13 +62,15 @@ void Renderer_DrawFrame(GameState* state)
     int rendered = 0;
     uint8_t is_last_model = 0;
 
-    for(int i = 0; i < MAX_OBSTACLES && rendered < 15; i++) {
+
+
+    for(int i = 0; i < MAX_OBSTACLES && rendered < 25; i++) {
         if(!obstacles[i].active) continue;
 
         // Check if visible
         if(obstacles[i].pos.z > -20 && obstacles[i].pos.z < 150) {
             rendered++;
-            is_last_model = (rendered >= visible_count || rendered >= 15) ? 1 : 0;
+            is_last_model = (rendered >= visible_count || rendered >= 25) ? 1 : 0;
 
             // Apply rotation
             Matrix3x3 rotation;
