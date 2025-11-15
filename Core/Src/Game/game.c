@@ -7,11 +7,15 @@
 #include "../../Inc/Game/shapes.h"
 #include "../../Inc/Game/obstacles.h"
 #include "../../Inc/buttons.h"
+
 #include "main.h"
 #include <string.h>
 #include <stdint.h>
 
 #define TIME_STEP ((float)UPDATE_INTERVAL / 1000.0f) // seconds per frame
+
+// Input mode: 0=binary, 1=analog
+static uint8_t input_mode = 1;
 
 // External handles
 extern SPI_HandleTypeDef hspi1;
@@ -59,6 +63,10 @@ GameState game_state;
 static uint32_t last_update_time = 0;
 static uint32_t last_render_time = 0;
 static ADCButtonState adc_buttons;
+
+void Game_SetInputMode(uint8_t mode) {
+    input_mode = mode; // 0=binary, 1=analog
+}
 
 void Game_Init(void)
 {
@@ -130,30 +138,43 @@ void Game_Update(uint32_t current_time)
 static void _HandleInput(void)
 {
     switch(game_state.state) {
-		case GAME_STATE_PLAYING:
-            float player_input;
-			if(adc_buttons.left) {
-                player_input = -1.0f;
-			}
-			else if(adc_buttons.right) {
-                player_input = 1.0f;
-			}
-            else {
-                player_input = 0.0f;
+        case GAME_STATE_PLAYING: {
+            float player_input = 0.0f;
+            if(input_mode == 0) {
+                // Binary mode (left/right)
+                if(adc_buttons.left) {
+                    player_input = -1.0f;
+                } else if(adc_buttons.right) {
+                    player_input = 1.0f;
+                } else {
+                    player_input = 0.0f;
+                }
+            } else {
+                // Analog mode (full range)
+                uint32_t adc_val = Buttons_GetLastADCValue();
+                float norm = ((float)adc_val - (float)POT_CENTER) / (float)POT_CENTER;
+                float edge_deadzone = (float)POT_DEADZONE / (float)POT_CENTER;
+                if(fabsf((float)adc_val - (float)POT_CENTER) < (float)POT_DEADZONE) {
+                    player_input = 0.0f;
+                } else if(norm > 1.0f - edge_deadzone) {
+                    player_input = 1.0f;
+                } else if(norm < -1.0f + edge_deadzone) {
+                    player_input = -1.0f;
+                } else {
+                    player_input = norm / 2.0f;
+                }
             }
             UpdatePlayerStrafe(&game_state, player_input);
-
-			if(adc_buttons.left_long_press || adc_buttons.right_long_press) {
-				StateManager_TransitionTo(GAME_STATE_PLAYING);
-			}
-			break;
-
+            if(adc_buttons.left_long_press || adc_buttons.right_long_press) {
+                StateManager_TransitionTo(GAME_STATE_PLAYING);
+            }
+            break;
+        }
         case GAME_STATE_PAUSED:
             if(adc_buttons.both_pressed) {
                 StateManager_Resume();
             }
             break;
-
         case GAME_STATE_MENU:
         case GAME_STATE_GAME_OVER:
             if(adc_buttons.left_pressed || adc_buttons.right_pressed) {
@@ -162,6 +183,7 @@ static void _HandleInput(void)
             break;
     }
 }
+
 
 // Delegation functions
 void Game_Reset(void) { StateManager_Reset(); }

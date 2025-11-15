@@ -1,14 +1,9 @@
+
 #include "buttons.h"
 #include "adc_functions.h"
 
 // External UART
 extern void UART_Printf(const char* format, ...);
-
-// Potentiometer zones
-#define POT_MIN_VALUE      0
-#define POT_MAX_VALUE      16383    // 14-bit max value
-#define POT_CENTER         8192     // Middle position for 14-bit
-#define POT_DEADZONE       1200     // Dead zone around center
 
 // Zone thresholds
 #define POT_LEFT_THRESHOLD  (POT_CENTER - POT_DEADZONE)  // ~6992
@@ -21,6 +16,8 @@ static uint8_t previous_zone = 0;
 static uint32_t zone_enter_time = 0;
 static uint8_t buttons_initialized = 0;
 static uint32_t debug_counter = 0;
+// Store last raw ADC value for analog input
+static uint32_t last_adc_value = POT_CENTER;
 
 void Buttons_Init(void) {
     GPIO_InitTypeDef GPIO_InitStruct = {0};
@@ -56,6 +53,7 @@ void Buttons_Update(ADCButtonState* state) {
 
     // Read potentiometer value
     uint32_t pot_value = Read_ADC_Channel(ADC_CHANNEL_1);
+    last_adc_value = pot_value;
 
     // Debug output every 40 calls
     debug_counter++;
@@ -139,3 +137,7 @@ uint8_t Buttons_AreBothPressed(ADCButtonState* state) {
     return 0;  // Can't press both with single pot
 }
 
+// Getter for last ADC value
+uint32_t Buttons_GetLastADCValue(void) {
+    return last_adc_value;
+}

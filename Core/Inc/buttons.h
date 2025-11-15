@@ -10,6 +10,12 @@
 #define BTN_RIGHT_PORT  GPIOC
 #define BTN_RIGHT_PIN   GPIO_PIN_1
 
+// Potentiometer zones
+#define POT_MIN_VALUE      0
+#define POT_MAX_VALUE      16383    // 14-bit max value
+#define POT_CENTER         8192     // Middle position for 14-bit
+#define POT_DEADZONE       600     // Dead zone around center
+
 // Debounce time in milliseconds
 #define DEBOUNCE_TIME_MS    50
 #define LONG_PRESS_TIME_MS  1000
@@ -51,5 +57,6 @@ void Buttons_Init(void);
 void Buttons_Update(ADCButtonState* state);
 uint8_t Buttons_IsAnyPressed(ADCButtonState* state);
 uint8_t Buttons_AreBothPressed(ADCButtonState* state);
+uint32_t Buttons_GetLastADCValue(void);
 
 #endif // BUTTONS_H
