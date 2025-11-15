@@ -38,6 +38,11 @@ void Renderer_DrawFrame(GameState* state)
     // Maybe it clears out garbage data on FPGA side?
     uint8_t reset_data[] = {0x00, 0x00, 0x00, 0x00};
     SPI_TransmitPacket(reset_data, 4);
+
+    Position camera_pos = {0, 10, -5};
+    Matrix3x3 camera_rotation;
+    Matrix_RotateX(&camera_rotation, 20.0f);
+    SPI_SetCameraPosition(&camera_pos, camera_rotation.m);
     
     // 2. Count visible obstacles
     Obstacle* obstacles = Obstacles_GetArray();
@@ -90,11 +95,6 @@ void Renderer_DrawFrame(GameState* state)
     Position player_render_pos = {0, 0, 0};
     SPI_AddModelInstance(SHAPE_ID_PLAYER, &player_render_pos,
                         player_rotation.m, 1);
-
-    Position camera_pos = {0, 10, -5};
-    Matrix3x3 camera_rotation;
-    Matrix_RotateX(&camera_rotation, 20.0f);
-    SPI_SetCameraPosition(&camera_pos, camera_rotation.m);
 }
 
 void Renderer_ClearScene(void)
