@@ -23,6 +23,7 @@ void Renderer_UploadShapes(void)
     UART_Printf("Uploading shapes to FPGA...\r\n");
 
     // Upload all game shapes with their IDs
+    SPI_SendShapeToFPGA(SHAPE_GROUND, Shapes_GetGround());
     SPI_SendShapeToFPGA(SHAPE_ID_PLAYER, Shapes_GetPlayer());
     SPI_SendShapeToFPGA(SHAPE_CUBE, Shapes_GetCube());
     SPI_SendShapeToFPGA(SHAPE_CONE, Shapes_GetCone());
@@ -89,6 +90,13 @@ void Renderer_DrawFrame(GameState* state)
             if(is_last_model) break;
         }
     }
+
+    // Render ground plane at origin
+    Shape3D* ground = Shapes_GetGround();
+    Position ground_pos = {0, 0, 20};
+    Matrix3x3 ground_rot;
+    Matrix_Identity(&ground_rot);
+    SPI_AddModelInstance(ground->id, &ground_pos, NULL, 0);
 
     // Render player at origin with banking
     Matrix3x3 player_rotation;

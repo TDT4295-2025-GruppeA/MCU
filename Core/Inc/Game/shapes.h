@@ -10,6 +10,7 @@ void Shapes_CreatePlayer(Shape3D* shape);
 void Shapes_CreateCube(Shape3D* shape);
 void Shapes_CreateCone(Shape3D* shape);
 void Shapes_CreatePyramid(Shape3D* shape);
+void Shapes_CreateGround(Shape3D* shape);
 
 // Shape utility functions
 void Shapes_Scale(Shape3D* shape, float scale);
@@ -20,5 +21,6 @@ Shape3D* Shapes_GetPlayer(void);
 Shape3D* Shapes_GetCube(void);
 Shape3D* Shapes_GetCone(void);
 Shape3D* Shapes_GetPyramid(void);
+Shape3D* Shapes_GetGround(void);
 
 #endif // SHAPES_H

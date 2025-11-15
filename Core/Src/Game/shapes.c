@@ -7,6 +7,7 @@ static Shape3D player_shape;
 static Shape3D cube_shape;
 static Shape3D cone_shape;
 static Shape3D pyramid_shape;
+static Shape3D ground_shape;
 static uint8_t shapes_initialized = 0;
 
 // Initialize all shapes
@@ -18,8 +19,36 @@ void Shapes_Init(void)
         Shapes_CreateCube(&cube_shape);
         Shapes_CreateCone(&cone_shape);
         Shapes_CreatePyramid(&pyramid_shape);
+        Shapes_CreateGround(&ground_shape);
         shapes_initialized = 1;
     }
+}
+
+// Create ground plane (quad)
+void Shapes_CreateGround(Shape3D* shape)
+{
+    memset(shape, 0, sizeof(Shape3D));
+    shape->id = SHAPE_GROUND;
+    shape->vertex_count = 4;
+    shape->triangle_count = 2;
+    int16_t size = 10;
+    int16_t y = 0; // Slightly below player
+    // Vertices: large quad in XZ plane
+    shape->vertices[0] = (Vertex3D){ size, size/2, 0}; // bottom right
+    shape->vertices[1] = (Vertex3D){ -size, size/2, 0}; // bottom left
+    shape->vertices[2] = (Vertex3D){ -size, -size/2,  0}; // top left
+    shape->vertices[3] = (Vertex3D){ size, -size/2,  0}; // top right
+    // Triangles
+    shape->triangles[0] = (Triangle){1, 2, 0};
+    shape->triangles[1] = (Triangle){0, 2, 3};
+    // Color: green
+    uint16_t ground_color = RGB565(0, 150, 0);
+    for(int i = 0; i < shape->triangle_count; i++) {
+        for(int v = 0; v < 3; v++) {
+            shape->colors[i][v] = ground_color;
+        }
+    }
+    Shapes_CalculateBounds(shape, &shape->width, &shape->height, &shape->depth);
 }
 
 // Create player shape (paper airplane)
@@ -33,7 +62,7 @@ void Shapes_CreatePlayer(Shape3D* shape)
 
     int16_t s = 1;
     // Define vertices
-// y flipped?
+    // y flipped?
     shape->vertices[0] = (Vertex3D){  s,  s, -2*s}; // Right wing
     shape->vertices[1] = (Vertex3D){  0, -s/2, -2*s}; // Top
     shape->vertices[2] = (Vertex3D){ -s,  s, -2*s}; // Left wing
@@ -241,6 +270,12 @@ Shape3D* Shapes_GetPlayer(void)
 {
     if(!shapes_initialized) Shapes_Init();
     return &player_shape;
+}
+
+Shape3D* Shapes_GetGround(void)
+{
+    if(!shapes_initialized) Shapes_Init();
+    return &ground_shape;
 }
 
 Shape3D* Shapes_GetCube(void)

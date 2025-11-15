@@ -39,6 +39,7 @@ typedef enum {
     SHAPE_CONE   = 0x02,
     SHAPE_PYRAMID = 0x03,
     SHAPE_SPHERE = 0x04,
+    SHAPE_GROUND = 0x05,
 
     SHAPE_ID_PLAYER = SHAPE_PLAYER,
 } ShapeID;
@@ -71,7 +72,7 @@ typedef struct {
     uint8_t triangle_count;             // Number of triangles
     Vertex3D vertices[MAX_VERTICES];    // Vertex array
     Triangle triangles[MAX_TRIANGLES];  // Triangle array
-uint16_t colors[MAX_TRIANGLES][3];  // Per-triangle, per-vertex color (RGB565)
+    uint16_t colors[MAX_TRIANGLES][3];  // Per-triangle, per-vertex color (RGB565)
     float width;                        // Precomputed bounding box width
     float height;                       // Precomputed bounding box height
     float depth;                        // Precomputed bounding box depth

@@ -1,5 +1,6 @@
 #include "./Game/obstacles.h"
 #include "./Game/shapes.h"
+#include "./Game/game.h"
 #include <stdlib.h>
 #include <string.h>
 
