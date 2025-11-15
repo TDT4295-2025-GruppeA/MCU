@@ -43,7 +43,7 @@ void Renderer_DrawFrame(GameState* state)
     Position camera_pos = {0, 2, 6};
     Matrix3x3 cam_tilt, cam_roll, cam_rot;
     Matrix_RotateX(&cam_tilt, 0.1f);
-    float camera_roll_angle = state->player_strafe_speed / PLAYER_STRAFE_MAX_SPEED / 4;
+    float camera_roll_angle = -state->player_strafe_speed / PLAYER_STRAFE_MAX_SPEED / 4;
     Matrix_RotateZ(&cam_roll, camera_roll_angle);
     Matrix_Multiply(&cam_rot, &cam_roll, &cam_tilt);
     SPI_SetCameraPosition(&camera_pos, cam_rot.m);
@@ -100,7 +100,7 @@ void Renderer_DrawFrame(GameState* state)
 
     // Render player at origin with banking
     Matrix3x3 player_rotation;
-    float player_roll_angle = -camera_roll_angle/2;
+    float player_roll_angle = -camera_roll_angle*2;
     Matrix_RotateZ(&player_rotation, player_roll_angle);
 
     Position player_render_pos = {0, 0, 0};
