@@ -45,6 +45,15 @@ CollisionResult Collision_CheckPlayer(Position* player_pos, Obstacle* obstacles,
                 if(py < result.penetration_depth) result.penetration_depth = py;
                 if(pz < result.penetration_depth) result.penetration_depth = pz;
 
+                // Debug print: player and obstacle positions and dimensions
+                UART_Printf("PLAYER: pos=(%d, %d, %d) w=%d h=%d d=%d\r\n",
+                    (int)player_pos->x, (int)player_pos->y, (int)player_pos->z,
+                    (int)Shapes_GetPlayer()->width, (int)Shapes_GetPlayer()->height, (int)Shapes_GetPlayer()->depth);
+                UART_Printf("OBSTACLE: pos=(%d, %d, %d) w=%d h=%d d=%d\r\n",
+                    (int)obstacles[i].pos.x, (int)obstacles[i].pos.y, (int)obstacles[i].pos.z,
+                    (int)obstacles[i].width, (int)obstacles[i].height, (int)obstacles[i].depth);
+
+
                 return result;
             }
         }

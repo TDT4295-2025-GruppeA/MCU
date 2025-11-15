@@ -58,10 +58,6 @@ void Buttons_Update(ADCButtonState* state) {
     // Debug output every 40 calls
     debug_counter++;
     if(debug_counter >= 40) {
-        UART_Printf("POT: %lu (Zone: %s)\r\n",
-                   pot_value,
-                   pot_value < POT_LEFT_THRESHOLD ? "LEFT" :
-                   pot_value > POT_RIGHT_THRESHOLD ? "RIGHT" : "CENTER");
         debug_counter = 0;
     }
 
