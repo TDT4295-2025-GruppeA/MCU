@@ -301,8 +301,8 @@ def create_scene():
     scene.title = "MCU -> FPGA Simulator (visualizer)"
     scene.width = 1200
     scene.height = 900
-    scene.center = vector(0, 2, 0)
-    scene.forward = vector(0, -0.25, 1)
+    # scene.center = vector(0, 2, 0)
+    scene.forward = vector(0, 0, 1)
     scene.autoscale = False
     scene.background = color.gray(0.2)
     info_label = label(pos=vector(-40, 30, 0), text="", height=16, box=False)
