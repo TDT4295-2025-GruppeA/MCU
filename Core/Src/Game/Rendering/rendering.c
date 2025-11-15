@@ -33,18 +33,20 @@ void Renderer_UploadShapes(void)
 void Renderer_DrawFrame(GameState* state)
 {
     if(!state) return;
+    
+    // This helps for some reasone.
+    // Maybe it clears out garbage data on FPGA side?
+    uint8_t reset_data[] = {0x00, 0x00, 0x00, 0x00};
+    SPI_TransmitPacket(reset_data, 4);
 
-    // 1. Render player at origin with banking
-    Matrix3x3 player_rotation;
-    float tilt_angle = state->player_pos.x * 0.01f;
-    float angle = (HAL_GetTick() * 0.001f) + (1 * 0.5f);
-
-    Matrix_RotateZ(&player_rotation, tilt_angle);
-    state->player_pos.z = 4;
-    Position player_render_pos = {state->player_pos.x, 1, state->player_pos.z};
-    SPI_AddModelInstance(SHAPE_ID_PLAYER, &player_render_pos,
-                        player_rotation.m, 0);
-
+    Position camera_pos = {0, 2, 6};
+    Matrix3x3 cam_tilt, cam_roll, cam_rot;
+    Matrix_RotateX(&cam_tilt, 0.1f);
+    float camera_roll_angle = state->player_strafe_speed * 0.03f;
+    Matrix_RotateZ(&cam_roll, camera_roll_angle);
+    Matrix_Multiply(&cam_rot, &cam_roll, &cam_tilt);
+    SPI_SetCameraPosition(&camera_pos, cam_rot.m);
+    
     // 2. Count visible obstacles
     Obstacle* obstacles = Obstacles_GetArray();
     int visible_count = 0;
@@ -77,27 +79,27 @@ void Renderer_DrawFrame(GameState* state)
                 Matrix_Identity(&rotation);
             }
 
-            // Send actual position
-            SPI_AddModelInstance(obstacles[i].shape_id, &obstacles[i].pos,
-                               rotation.m, is_last_model);
+            // Adjust obstacle X to keep player visually centered
+            Position render_pos = obstacles[i].pos;
+            render_pos.x -= state->player_pos.x;
+
+            SPI_AddModelInstance(obstacles[i].shape_id, &render_pos,
+                               rotation.m, 0);
 
             if(is_last_model) break;
         }
     }
 
-    // 4. Fallback if no obstacles
-    if(rendered == 0) {
-        SPI_AddModelInstance(SHAPE_ID_PLAYER, &player_render_pos,
-                           player_rotation.m, 1);
-    }
+    // Render player at origin with banking
+    Matrix3x3 player_rotation;
+    float player_tilt_angle = state->player_strafe_speed * 0.03f;
+    Matrix_RotateZ(&player_rotation, player_tilt_angle);
+
+    Position player_render_pos = {0, 0, 0};
+    SPI_AddModelInstance(SHAPE_ID_PLAYER, &player_render_pos,
+                        player_rotation.m, 1);
 }
 
 void Renderer_ClearScene(void)
 {
-    SPI_ClearScene();
-}
-
-void Renderer_SendCollisionEffect(void)
-{
-    SPI_SendCollisionEvent();
 }

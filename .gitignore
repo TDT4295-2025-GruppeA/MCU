@@ -14,6 +14,7 @@ Release/
 
 # IDE - STM32CubeIDE specific
 .metadata/
+.mxproject
 *.launch
 RemoteSystemsTempFiles/
 

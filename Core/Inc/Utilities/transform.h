@@ -52,4 +52,16 @@ static inline void Matrix_Scale(Matrix3x3* mat, float sx, float sy, float sz) {
     mat->m[6] = 0.0f; mat->m[7] = 0.0f; mat->m[8] = sz;
 }
 
+// Multiply two 3x3 matrices: result = a * b
+static inline void Matrix_Multiply(Matrix3x3* result, const Matrix3x3* a, const Matrix3x3* b) {
+    for (int row = 0; row < 3; ++row) {
+        for (int col = 0; col < 3; ++col) {
+            result->m[row * 3 + col] =
+                a->m[row * 3 + 0] * b->m[0 * 3 + col] +
+                a->m[row * 3 + 1] * b->m[1 * 3 + col] +
+                a->m[row * 3 + 2] * b->m[2 * 3 + col];
+        }
+    }
+}
+
 #endif /* INC_UTILITIES_TRANSFORM_H_ */

@@ -7,7 +7,7 @@
 void Obstacles_Init(void);
 
 // Obstacle management
-void Obstacles_Update(float player_z, float delta_time);
+void Obstacles_Update(Position* player_pos, float delta_time);
 void Obstacles_Spawn(float z_position);
 void Obstacles_Clear(void);
 void Obstacles_Reset(void);

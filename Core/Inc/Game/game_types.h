@@ -4,18 +4,22 @@
 #include <stdint.h>
 
 // ========== Game Constants ==========
-#define UPDATE_INTERVAL 25     // ms between updates
-#define FORWARD_SPEED   5.0f     // units per second
-#define STRAFE_SPEED    0.1       // units per strafe
-#define WORLD_MIN_X     -5
-#define WORLD_MAX_X     5
+#define UPDATE_INTERVAL 5      // ms between updates
+#define RENDER_INTERVAL 20      // ms between updates
+#define FORWARD_SPEED   10.0f     // units per second
+#define PLAYER_STRAFE_ACCEL     100.0f   // units/sec^2 (acceleration)
+#define PLAYER_STRAFE_DECEL (PLAYER_STRAFE_ACCEL * 2.0f)
+#define PLAYER_STRAFE_MAX_SPEED 20.0f   // units/sec (max speed)
+#define WORLD_MIN_X     -50
+#define WORLD_MAX_X     50
 
 // 3D Shape constants
 #define MAX_VERTICES    32       // Max vertices per shape
 #define MAX_TRIANGLES   16       // Max triangles per shape
 #define MAX_OBSTACLES   20       // Max obstacles on screen
 #define OBSTACLE_SPAWN_DIST 50  // Distance ahead to spawn obstacles
-#define OBSTACLE_SPACING 6      // Min spacing between obstacles
+#define OBSTACLE_SPACING 10      // Min spacing between obstacles
+#define OBSTACLE_SPAWN_OFFSET 35.0f // Obstacles spawn within ±100 units of player X
 
 // ========== SPI Protocol Commands ==========
 typedef enum {
@@ -65,6 +69,9 @@ typedef struct {
     uint8_t triangle_count;             // Number of triangles
     Vertex3D vertices[MAX_VERTICES];   // Vertex array
     Triangle triangles[MAX_TRIANGLES]; // Triangle array
+    float width;                        // Precomputed bounding box width
+    float height;                       // Precomputed bounding box height
+    float depth;                        // Precomputed bounding box depth
 } Shape3D;
 
 // ========== Game Objects ==========
@@ -100,7 +107,8 @@ typedef struct {
     uint32_t score;
     float next_spawn_z;
     float total_distance;
-    uint32_t game_start_time;  // Track when game started (duration)
+    uint32_t game_start_time;  // Track when game started (for duration)
+    float player_strafe_speed;
 } GameState;
 
 // ========== Game Statistics ==========

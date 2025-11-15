@@ -80,7 +80,7 @@ int main(void)
   BSP_LED_Init(LED_GREEN);
 
   // Configure COM port for BSP
-  BspCOMInit.BaudRate   = 115200;
+  BspCOMInit.BaudRate   = 230400;
   BspCOMInit.WordLength = COM_WORDLENGTH_8B;
   BspCOMInit.StopBits   = COM_STOPBITS_1;
   BspCOMInit.Parity     = COM_PARITY_NONE;
@@ -111,8 +111,13 @@ int main(void)
   while (1)
   {
     uint32_t now = HAL_GetTick();
+    /* Run the full game update loop (handles buttons, movement, rendering) */
     Game_Update(now);
   }
+  /* USER CODE END WHILE */
+
+  /* USER CODE BEGIN 3 */
+  /* USER CODE END 3 */
 }
 
 /**
@@ -128,7 +133,7 @@ void SystemClock_Config(void)
   */
   if (HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE4) != HAL_OK)
   {
-    Error_Handler();
+      Error_Handler();
   }
 
   /** Initializes the CPU, AHB and APB buses clocks

@@ -89,7 +89,7 @@ void StateManager_TransitionTo(GameStateEnum new_state)
     }
 
     // Notify FPGA of state change
-    SPI_SendGameState(game_state_ptr->state, game_state_ptr->score);
+    // SPI_SendGameState(game_state_ptr->state, game_state_ptr->score);
 }
 
 void StateManager_Pause(void)
@@ -116,9 +116,6 @@ static void _HandleGameOver(void)
     if(!game_state_ptr) return;
 
     game_state_ptr->moving_forward = 0;
-
-    // Send collision event to FPGA
-    SPI_SendCollisionEvent();
 
     // Calculate game time
     uint32_t game_time = (HAL_GetTick() - game_state_ptr->game_start_time) / 1000;

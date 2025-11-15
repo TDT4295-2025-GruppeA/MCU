@@ -19,5 +19,6 @@ void Shapes_CalculateBounds(Shape3D* shape, float* width, float* height, float* 
 Shape3D* Shapes_GetPlayer(void);
 Shape3D* Shapes_GetCube(void);
 Shape3D* Shapes_GetCone(void);
+Shape3D* Shapes_GetPyramid(void);
 
 #endif // SHAPES_H

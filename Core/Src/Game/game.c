@@ -8,6 +8,10 @@
 #include "../../Inc/Game/obstacles.h"
 #include "../../Inc/buttons.h"
 #include "main.h"
+#include <string.h>
+#include <stdint.h>
+
+#define TIME_STEP ((float)UPDATE_INTERVAL / 1000.0f) // seconds per frame
 
 // External handles
 extern SPI_HandleTypeDef hspi1;
@@ -17,9 +21,43 @@ extern void UART_Printf(const char* format, ...);
 // Forward declarations of static functions
 static void _HandleInput(void);
 
+// Helper: update player strafe movement (acceleration-based, supports joystick)
+static void UpdatePlayerStrafe(GameState* state, float input)
+{
+    // input: -1 (left), 0 (none), 1 (right), or analog [-1,1] for joystick
+    float accel = PLAYER_STRAFE_ACCEL;
+    float decel = PLAYER_STRAFE_DECEL;
+    float max_speed = PLAYER_STRAFE_MAX_SPEED;
+
+    // Accelerate based on input
+    state->player_strafe_speed += accel * input * TIME_STEP;
+    // Clamp speed
+    if (state->player_strafe_speed > max_speed)
+        state->player_strafe_speed = max_speed;
+    if (state->player_strafe_speed < -max_speed)
+        state->player_strafe_speed = -max_speed;
+
+    // Decay speed toward zero if no input (simulate friction)
+    if (input == 0) {
+        if (state->player_strafe_speed > 0) {
+            state->player_strafe_speed -= decel * TIME_STEP;
+            if (state->player_strafe_speed < 0)
+                state->player_strafe_speed = 0;
+        } else if (state->player_strafe_speed < 0) {
+            state->player_strafe_speed += decel * TIME_STEP;
+            if (state->player_strafe_speed > 0)
+                state->player_strafe_speed = 0;
+        }
+    }
+
+    // Move player by current speed
+    GameLogic_MovePlayer(state, state->player_strafe_speed * TIME_STEP);
+}
+
 // Global game state
-static GameState game_state;
+GameState game_state;
 static uint32_t last_update_time = 0;
+static uint32_t last_render_time = 0;
 static ADCButtonState adc_buttons;
 
 void Game_Init(void)
@@ -27,6 +65,8 @@ void Game_Init(void)
     UART_Printf("\r\n=================================\r\n");
     UART_Printf("Cubefield  \r\n");
     UART_Printf("=================================\r\n");
+
+    // srand(HAL_GetTick());
 
     // Initialize core systems
     Input_Init();
@@ -37,17 +77,19 @@ void Game_Init(void)
     // Initialize feature modules
     StateManager_Init(&game_state);
     Renderer_Init(&hspi1);
-    SaveSystem_Init(&hspi3);
+    // SaveSystem_Init(&hspi3);
     GameLogic_Init();
 
     // Load saved data
-    SaveSystem_LoadStats();
+    // SaveSystem_LoadStats();
 
     // Upload shapes to FPGA
     Renderer_UploadShapes();
 
     UART_Printf("Game ready! Starting...\r\n\r\n");
     StateManager_TransitionTo(GAME_STATE_PLAYING);
+
+    game_state.player_strafe_speed = 0.0f;
 }
 
 void Game_Update(uint32_t current_time)
@@ -73,10 +115,15 @@ void Game_Update(uint32_t current_time)
         	UART_Printf("Collision event!  \r\n");
         } else {
             GameLogic_UpdateScore(&game_state);
-            Renderer_DrawFrame(&game_state);
-
         }
     }
+
+    // Render slower than game loop.
+    if (current_time - last_render_time > RENDER_INTERVAL) {
+        last_render_time = current_time;
+        Renderer_DrawFrame(&game_state);
+    }
+
 }
 
 // Static function implementation
@@ -84,12 +131,18 @@ static void _HandleInput(void)
 {
     switch(game_state.state) {
 		case GAME_STATE_PLAYING:
+            float player_input;
 			if(adc_buttons.left) {
-				GameLogic_MovePlayer(&game_state, -STRAFE_SPEED);
+                player_input = -1.0f;
 			}
-			if(adc_buttons.right) {
-				GameLogic_MovePlayer(&game_state, STRAFE_SPEED);
+			else if(adc_buttons.right) {
+                player_input = 1.0f;
 			}
+            else {
+                player_input = 0.0f;
+            }
+            UpdatePlayerStrafe(&game_state, player_input);
+
 			if(adc_buttons.left_long_press || adc_buttons.right_long_press) {
 				StateManager_TransitionTo(GAME_STATE_PLAYING);
 			}
@@ -122,32 +175,3 @@ GameState* Game_GetState(void) { return &game_state; }
 uint32_t Game_GetScore(void) { return game_state.score; }
 uint8_t Game_IsRunning(void) { return (game_state.state == GAME_STATE_PLAYING); }
 
-void Game_HandleButton(uint8_t button_state, uint32_t current_time)
-{
-    InputAction action = Input_ProcessButton(button_state, current_time);
-
-    switch(action) {
-        case ACTION_MOVE_LEFT:
-            if(game_state.state == GAME_STATE_PLAYING) {
-                GameLogic_MovePlayer(&game_state, -STRAFE_SPEED);
-            }
-            break;
-
-        case ACTION_MOVE_RIGHT:
-            if(game_state.state == GAME_STATE_PLAYING) {
-                GameLogic_MovePlayer(&game_state, STRAFE_SPEED);
-            }
-            break;
-
-        case ACTION_PAUSE:
-            if(game_state.state == GAME_STATE_PLAYING) {
-                StateManager_Pause();
-            } else if(game_state.state == GAME_STATE_PAUSED) {
-                StateManager_Resume();
-            }
-            break;
-
-        default:
-            break;
-    }
-}

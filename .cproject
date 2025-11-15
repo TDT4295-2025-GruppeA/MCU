@@ -251,14 +251,13 @@
 	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
 	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets"/>
-	<storageModule moduleId="scannerConfiguration">
-		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
-		<scannerConfigBuildInfo instanceId="com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.debug.1860609972;com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.debug.1860609972.;com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.1727615048;com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c.149352849">
-			<autodiscovery enabled="false" problemReportingEnabled="true" selectedProfileId=""/>
-		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.release.1659769919;com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.release.1659769919.;com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.204770296;com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c.110918827">
-			<autodiscovery enabled="false" problemReportingEnabled="true" selectedProfileId=""/>
-		</scannerConfigBuildInfo>
+	<storageModule moduleId="refreshScope" versionNumber="2">
+		<configuration configurationName="Debug">
+			<resource resourceType="PROJECT" workspacePath="/Dataprosjekt"/>
+		</configuration>
+		<configuration configurationName="Release">
+			<resource resourceType="PROJECT" workspacePath="/Dataprosjekt"/>
+		</configuration>
 	</storageModule>
 	<storageModule moduleId="refreshScope" versionNumber="2">
 		<configuration configurationName="UNIT_TESTS"/>
@@ -269,4 +268,5 @@
 			<resource resourceType="PROJECT" workspacePath="/Dataprosjekt"/>
 		</configuration>
 	</storageModule>
+	<storageModule moduleId="scannerConfiguration"/>
 </cproject>

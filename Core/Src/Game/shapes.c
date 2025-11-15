@@ -6,6 +6,7 @@
 static Shape3D player_shape;
 static Shape3D cube_shape;
 static Shape3D cone_shape;
+static Shape3D pyramid_shape;
 static uint8_t shapes_initialized = 0;
 
 // Initialize all shapes
@@ -16,6 +17,7 @@ void Shapes_Init(void)
         Shapes_CreatePlayer(&player_shape);
         Shapes_CreateCube(&cube_shape);
         Shapes_CreateCone(&cone_shape);
+        Shapes_CreatePyramid(&pyramid_shape);
         shapes_initialized = 1;
     }
 }
@@ -50,7 +52,7 @@ void Shapes_CreatePlayer(Shape3D* shape)
     // Bottom face
     shape->triangles[3] = (Triangle){3, 0, 2};
 
-
+    Shapes_CalculateBounds(shape, &shape->width, &shape->height, &shape->depth);
 }
 
 // Create cube shape
@@ -93,6 +95,8 @@ void Shapes_CreateCube(Shape3D* shape)
     // Left face
     shape->triangles[10] = (Triangle){7, 2, 0};
     shape->triangles[11] = (Triangle){0, 6, 7};
+
+    Shapes_CalculateBounds(shape, &shape->width, &shape->height, &shape->depth);
 }
 
 // Create cone shape
@@ -125,6 +129,9 @@ void Shapes_CreateCone(Shape3D* shape)
         int next = (i + 1) % 8;
         shape->triangles[i] = (Triangle){0, i+1, next+1};
     }
+
+    // Calculate and store bounds
+    Shapes_CalculateBounds(shape, &shape->width, &shape->height, &shape->depth);
 }
 
 // Create pyramid shape
@@ -154,6 +161,9 @@ void Shapes_CreatePyramid(Shape3D* shape)
     // Base triangles
     shape->triangles[4] = (Triangle){1, 3, 2};
     shape->triangles[5] = (Triangle){1, 4, 3};
+
+    // Calculate and store bounds
+    Shapes_CalculateBounds(shape, &shape->width, &shape->height, &shape->depth);
 }
 
 // Scale a shape by a factor
@@ -165,6 +175,8 @@ void Shapes_Scale(Shape3D* shape, float scale)
         shape->vertices[i].y = (int16_t)(shape->vertices[i].y * scale);
         shape->vertices[i].z = (int16_t)(shape->vertices[i].z * scale);
     }
+    // Recalculate bounds after scaling
+    Shapes_CalculateBounds(shape, &shape->width, &shape->height, &shape->depth);
 }
 
 // Calculate bounding box dimensions
@@ -208,4 +220,10 @@ Shape3D* Shapes_GetCone(void)
 {
     if(!shapes_initialized) Shapes_Init();
     return &cone_shape;
+}
+
+Shape3D* Shapes_GetPyramid(void)
+{
+    if(!shapes_initialized) Shapes_Init();
+    return &pyramid_shape;
 }

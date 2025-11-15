@@ -1,4 +1,5 @@
 #include "./Game/collision.h"
+#include "./Game/shapes.h"
 #include <math.h>
 
 // Player collision box dimensions
@@ -10,20 +11,20 @@
 CollisionResult Collision_CheckPlayer(Position* player_pos, Obstacle* obstacles, uint8_t obstacle_count)
 {
     CollisionResult result = {COLLISION_NONE, 0, 0.0f};
-    float delta_h = 0.1;
-    // Check boundary collision
-    if(player_pos->x < (WORLD_MIN_X - delta_h) || player_pos->x > (WORLD_MAX_X + delta_h))
-    {
-    	result.type = COLLISION_BOUNDARY;
-        return result;
-    }
+
+    // // Check boundary collision
+    // if(player_pos->x < WORLD_MIN_X || player_pos->x > WORLD_MAX_X)
+    // {
+    //     result.type = COLLISION_BOUNDARY;
+    //     return result;
+    // }
 
     // Check obstacle collisions
     for(uint8_t i = 0; i < obstacle_count; i++)
     {
         if(obstacles[i].active)
         {
-            if(Collision_BoxIntersect(player_pos, PLAYER_WIDTH, PLAYER_HEIGHT, PLAYER_DEPTH,
+            if(Collision_BoxIntersect(player_pos, Shapes_GetPlayer()->width, Shapes_GetPlayer()->height, Shapes_GetPlayer()->depth,
                                      &obstacles[i].pos, obstacles[i].width,
                                      obstacles[i].height, obstacles[i].depth-1))
             {
@@ -35,9 +36,9 @@ CollisionResult Collision_CheckPlayer(Position* player_pos, Obstacle* obstacles,
                 float dy = fabsf(player_pos->y - obstacles[i].pos.y);
                 float dz = fabsf(player_pos->z - obstacles[i].pos.z);
 
-                float px = (PLAYER_WIDTH/2 + obstacles[i].width/2) - dx;
-                float py = (PLAYER_HEIGHT/2 + obstacles[i].height/2) - dy;
-                float pz = (PLAYER_DEPTH/2 + obstacles[i].depth/2) - dz;
+                float px = (Shapes_GetPlayer()->width/2 + obstacles[i].width/2) - dx;
+                float py = (Shapes_GetPlayer()->height/2 + obstacles[i].height/2) - dy;
+                float pz = (Shapes_GetPlayer()->depth/2 + obstacles[i].depth/2) - dz;
 
                 // Find minimum penetration
                 result.penetration_depth = px;
