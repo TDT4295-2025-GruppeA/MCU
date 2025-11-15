@@ -33,9 +33,6 @@ void GameLogic_MovePlayer(GameState* state, float delta_x)
     if(!state) return;
 
     state->player_pos.x += delta_x;
-
-
-    UART_Printf("Player X=%d\r\n", (int)state->player_pos.x);
 }
 
 bool GameLogic_CheckCollisions(GameState* state)

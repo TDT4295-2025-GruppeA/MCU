@@ -80,7 +80,7 @@ int main(void)
   BSP_LED_Init(LED_GREEN);
 
   // Configure COM port for BSP
-  BspCOMInit.BaudRate   = 230400;
+  BspCOMInit.BaudRate   = 115200;
   BspCOMInit.WordLength = COM_WORDLENGTH_8B;
   BspCOMInit.StopBits   = COM_STOPBITS_1;
   BspCOMInit.Parity     = COM_PARITY_NONE;
