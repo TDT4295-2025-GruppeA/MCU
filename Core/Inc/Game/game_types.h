@@ -9,7 +9,7 @@
 #define FORWARD_SPEED   10.0f     // units per second
 #define PLAYER_STRAFE_ACCEL     100.0f   // units/sec^2 (acceleration)
 #define PLAYER_STRAFE_DECEL (PLAYER_STRAFE_ACCEL * 2.0f)
-#define PLAYER_STRAFE_MAX_SPEED 10.0f   // units/sec (max speed)
+#define PLAYER_STRAFE_MAX_SPEED 20.0f   // units/sec (max speed)
 #define WORLD_MIN_X     -50
 #define WORLD_MAX_X     50
 

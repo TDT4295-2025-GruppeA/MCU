@@ -39,10 +39,13 @@ void Renderer_DrawFrame(GameState* state)
     uint8_t reset_data[] = {0x00, 0x00, 0x00, 0x00};
     SPI_TransmitPacket(reset_data, 4);
 
-    Position camera_pos = {0, 10, -5};
-    Matrix3x3 camera_rotation;
-    Matrix_RotateX(&camera_rotation, 20.0f);
-    SPI_SetCameraPosition(&camera_pos, camera_rotation.m);
+    Position camera_pos = {0, 2, 6};
+    Matrix3x3 cam_tilt, cam_roll, cam_rot;
+    Matrix_RotateX(&cam_tilt, 0.1f);
+    float camera_roll_angle = state->player_strafe_speed * 0.03f;
+    Matrix_RotateZ(&cam_roll, camera_roll_angle);
+    Matrix_Multiply(&cam_rot, &cam_roll, &cam_tilt);
+    SPI_SetCameraPosition(&camera_pos, cam_rot.m);
     
     // 2. Count visible obstacles
     Obstacle* obstacles = Obstacles_GetArray();
