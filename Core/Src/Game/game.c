@@ -131,12 +131,18 @@ static void _HandleInput(void)
 {
     switch(game_state.state) {
 		case GAME_STATE_PLAYING:
+            float player_input;
 			if(adc_buttons.left) {
-				UpdatePlayerStrafe(&game_state, -1.0f);
+                player_input = -1.0f;
 			}
-			if(adc_buttons.right) {
-				UpdatePlayerStrafe(&game_state, 1.0f);
+			else if(adc_buttons.right) {
+                player_input = 1.0f;
 			}
+            else {
+                player_input = 0.0f;
+            }
+            UpdatePlayerStrafe(&game_state, player_input);
+
 			if(adc_buttons.left_long_press || adc_buttons.right_long_press) {
 				StateManager_TransitionTo(GAME_STATE_PLAYING);
 			}
