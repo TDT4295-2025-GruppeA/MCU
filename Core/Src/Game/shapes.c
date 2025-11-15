@@ -33,11 +33,11 @@ void Shapes_CreatePlayer(Shape3D* shape)
 
     int16_t s = 1;
     // Define vertices
-    shape->vertices[0] = (Vertex3D){  s,  s, -s}; // Left wing
-    shape->vertices[1] = (Vertex3D){  0, -s/2, -s}; // Top
-    shape->vertices[2] = (Vertex3D){ -s,  s, -s}; // Right wing
+// y flipped?
+    shape->vertices[0] = (Vertex3D){  s,  s, -2*s}; // Right wing
+    shape->vertices[1] = (Vertex3D){  0, -s/2, -2*s}; // Top
+    shape->vertices[2] = (Vertex3D){ -s,  s, -2*s}; // Left wing
     shape->vertices[3] = (Vertex3D){  0,  1.5*s,  2*s}; // Nose tip
-
 
     // Define triangles (2 per face)
     // Back face
@@ -53,6 +53,23 @@ void Shapes_CreatePlayer(Shape3D* shape)
     shape->triangles[3] = (Triangle){3, 0, 2};
 
     Shapes_CalculateBounds(shape, &shape->width, &shape->height, &shape->depth);
+
+    // Set per-triangle, per-vertex colors (example: rainbow)
+    shape->colors[0][0] = RGB565(255, 0, 0);   // Red
+    shape->colors[0][1] = RGB565(0, 255, 0);   // Green
+    shape->colors[0][2] = RGB565(0, 0, 255);   // Blue
+
+    shape->colors[1][0] = RGB565(255, 255, 0); // Yellow
+    shape->colors[1][1] = RGB565(0, 255, 255); // Cyan
+    shape->colors[1][2] = RGB565(255, 0, 255); // Magenta
+
+    shape->colors[2][0] = RGB565(255, 128, 0); // Orange
+    shape->colors[2][1] = RGB565(128, 0, 255); // Purple
+    shape->colors[2][2] = RGB565(0, 255, 128); // Spring green
+
+    shape->colors[3][0] = RGB565(255, 255, 255); // White
+    shape->colors[3][1] = RGB565(128, 128, 128); // Gray
+    shape->colors[3][2] = RGB565(0, 0, 0);       // Black
 }
 
 // Create cube shape
@@ -97,6 +114,22 @@ void Shapes_CreateCube(Shape3D* shape)
     shape->triangles[11] = (Triangle){0, 6, 7};
 
     Shapes_CalculateBounds(shape, &shape->width, &shape->height, &shape->depth);
+
+    // Assign a unique color to each face (2 triangles per face)
+    uint16_t face_colors[6] = {
+        RGB565(255, 0, 0),    // Front - Red
+        RGB565(0, 255, 0),    // Back - Green
+        RGB565(0, 0, 255),    // Top - Blue
+        RGB565(255, 255, 0),  // Bottom - Yellow
+        RGB565(255, 0, 255),  // Right - Magenta
+        RGB565(0, 255, 255)   // Left - Cyan
+    };
+    for(int i = 0; i < shape->triangle_count; i++) {
+        uint16_t color = face_colors[i / 2];
+        for(int v = 0; v < 3; v++) {
+            shape->colors[i][v] = color;
+        }
+    }
 }
 
 // Create cone shape

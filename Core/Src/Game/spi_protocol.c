@@ -91,8 +91,6 @@ void SPI_SendShapeToFPGA(uint8_t model_id, Shape3D* shape)
         uint8_t packet[43];
         packet[0] = CMD_UPLOAD_TRIANGLE;
 
-        uint16_t colors[] = {0xFFFF, 0xFF00, 0x00FF};
-
         for(int v = 0; v < 3; v++) {
             uint8_t vertex_idx = (v == 0) ? shape->triangles[i].v1 :
                                 (v == 1) ? shape->triangles[i].v2 :
@@ -103,9 +101,10 @@ void SPI_SendShapeToFPGA(uint8_t model_id, Shape3D* shape)
             int32_t z = (int32_t)(shape->vertices[vertex_idx].z * 65536.0f);
 
             int offset = 1 + (v * 14);
-            // Pack all three coordinates
-            packet[offset++] = colors[v] >> 4;  // RGB byte 1
-            packet[offset++] = colors[v];  // RGB byte 2
+            // Pack color for this triangle/vertex
+            uint16_t color = shape->colors[i][v];
+            packet[offset++] = color >> 8;  // RGB byte 1 (high byte)
+            packet[offset++] = color & 0xFF;  // RGB byte 2 (low byte)
             packet[offset++] = (x >> 24) & 0xFF;
             packet[offset++] = (x >> 16) & 0xFF;
             packet[offset++] = (x >> 8) & 0xFF;

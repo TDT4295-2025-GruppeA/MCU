@@ -63,12 +63,15 @@ typedef struct {
 } Triangle;
 
 // ========== Shape Definition ==========
+// Helper macro: Convert 8-bit RGB to RGB565 (found online)
+#define RGB565(r, g, b) ((((r) & 0xF8) << 8) | (((g) & 0xFC) << 3) | (((b) & 0xF8) >> 3))
 typedef struct {
     uint8_t id;                         // Shape identifier
     uint8_t vertex_count;               // Number of vertices
     uint8_t triangle_count;             // Number of triangles
-    Vertex3D vertices[MAX_VERTICES];   // Vertex array
-    Triangle triangles[MAX_TRIANGLES]; // Triangle array
+    Vertex3D vertices[MAX_VERTICES];    // Vertex array
+    Triangle triangles[MAX_TRIANGLES];  // Triangle array
+uint16_t colors[MAX_TRIANGLES][3];  // Per-triangle, per-vertex color (RGB565)
     float width;                        // Precomputed bounding box width
     float height;                       // Precomputed bounding box height
     float depth;                        // Precomputed bounding box depth
