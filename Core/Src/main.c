@@ -1,5 +1,6 @@
 #include "main.h"
 #include "./Game/game.h"
+#include "./Game/seven_segment.h"
 #include "./Test/command_handler.h"
 #include "buttons.h"
 #include "peripherals.h"
@@ -8,6 +9,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
+
 
 #ifdef RUN_UNIT_TESTS
     #include "./SDCard/sd_card.h"
@@ -112,6 +114,8 @@ int main(void)
   {
     uint32_t now = HAL_GetTick();
     /* Run the full game update loop (handles buttons, movement, rendering) */
+    // SevenSegment_Init();
+    // SevenSegment_Loop();
     Game_Update(now);
   }
   /* USER CODE END WHILE */
