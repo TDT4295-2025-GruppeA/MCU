@@ -15,7 +15,7 @@
 #define TIME_STEP ((float)UPDATE_INTERVAL / 1000.0f) // seconds per frame
 
 // Input mode: 0=binary, 1=analog
-static uint8_t input_mode = 1;
+static uint8_t input_mode = 2;
 
 // External handles
 extern SPI_HandleTypeDef hspi1;
@@ -149,7 +149,7 @@ static void _HandleInput(void)
                 } else {
                     player_input = 0.0f;
                 }
-            } else {
+            } else if (input_mode == 1) {
                 // Analog mode (full range)
                 uint32_t adc_val = Buttons_GetLastADCValue();
                 float norm = ((float)adc_val - (float)POT_CENTER) / (float)POT_CENTER;
@@ -162,6 +162,13 @@ static void _HandleInput(void)
                     player_input = -1.0f;
                 } else {
                     player_input = norm / 2.0f;
+                }
+            }
+            else if (input_mode == 2) {
+;                if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13) == 0) {
+                    player_input = 1.0f; // right
+                } else {
+                    player_input = -1.0f; // left
                 }
             }
             UpdatePlayerStrafe(&game_state, player_input);
