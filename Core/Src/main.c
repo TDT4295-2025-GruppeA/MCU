@@ -22,18 +22,21 @@
     extern void Run_Collision_Tests(void);
 #endif
 
-COM_InitTypeDef BspCOMInit;
+// COM_InitTypeDef BspCOMInit;
 ADC_HandleTypeDef hadc1;
 
 SPI_HandleTypeDef hspi1;
 SPI_HandleTypeDef hspi3;
 
-UART_HandleTypeDef huart1;
+// UART_HandleTypeDef huart1;
 uint8_t uart_rx = 0;
 
 void SystemClock_Config(void);
 static void SystemPower_Config(void);
 
+void UART_Printf(const char* format, ...) {
+  // do noithing;
+}
 
 uint32_t Read_ADC_Channel(uint32_t channel);
 
@@ -77,20 +80,20 @@ int main(void)
 
   /* Initialize all configured peripherals */
   Peripherals_Init();
-  Debug_Init();
+  // Debug_Init();
 
-  BSP_LED_Init(LED_GREEN);
+  // BSP_LED_Init(LED_GREEN);
 
   // Configure COM port for BSP
-  BspCOMInit.BaudRate   = 115200;
-  BspCOMInit.WordLength = COM_WORDLENGTH_8B;
-  BspCOMInit.StopBits   = COM_STOPBITS_1;
-  BspCOMInit.Parity     = COM_PARITY_NONE;
-  BspCOMInit.HwFlowCtl  = COM_HWCONTROL_NONE;
-  BSP_COM_Init(COM1, &BspCOMInit);
+  // BspCOMInit.BaudRate   = 115200;
+  // BspCOMInit.WordLength = COM_WORDLENGTH_8B;
+  // BspCOMInit.StopBits   = COM_STOPBITS_1;
+  // BspCOMInit.Parity     = COM_PARITY_NONE;
+  // BspCOMInit.HwFlowCtl  = COM_HWCONTROL_NONE;
+  // BSP_COM_Init(COM1, &BspCOMInit);
 
   // Start UART interrupt
-  HAL_UART_Receive_IT(&huart1, &uart_rx, 1);
+  // HAL_UART_Receive_IT(&huart1, &uart_rx, 1);
 
   // Run ADC calibration
   if (HAL_ADCEx_Calibration_Start(&hadc1, ADC_CALIB_OFFSET, ADC_SINGLE_ENDED) != HAL_OK)
@@ -105,10 +108,10 @@ int main(void)
 		Game_Init();
   #endif
 
-  if (BSP_COM_Init(COM1, &BspCOMInit) != BSP_ERROR_NONE)
-  {
-    Error_Handler();
-  }
+  // if (BSP_COM_Init(COM1, &BspCOMInit) != BSP_ERROR_NONE)
+  // {
+  //   Error_Handler();
+  // }
 
   while (1)
   {
@@ -196,7 +199,7 @@ void Error_Handler(void)
   __disable_irq();
   while (1)
   {
-      BSP_LED_Toggle(LED_GREEN);
+      // BSP_LED_Toggle(LED_GREEN);
       HAL_Delay(100);
   }
 }

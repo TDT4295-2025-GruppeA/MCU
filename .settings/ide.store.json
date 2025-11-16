@@ -1,0 +1,6 @@
+{
+  "device": "STM32U545VET6Q",
+  "toolchain": "GCC",
+  "core": "Cortex-M33",
+  "order": 0
+}

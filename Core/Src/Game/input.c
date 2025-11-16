@@ -1,6 +1,6 @@
 #include "./Game/input.h"
 #include "stm32u5xx_hal.h"
-#include "stm32u5xx_nucleo.h"
+// #include "stm32u5xx_nucleo.h"
 #include <string.h>
 
 // External UART for debugging
@@ -40,7 +40,7 @@ InputAction Input_ProcessButton(uint8_t button_pressed, uint32_t current_time)
         button_state.press_time = current_time;
         last_button_time = current_time;
 
-        BSP_LED_On(LED_GREEN);
+        // BSP_LED_On(LED_GREEN);
     }
     // Detect release
     else if(!button_pressed && button_state.pressed)
@@ -49,7 +49,7 @@ InputAction Input_ProcessButton(uint8_t button_pressed, uint32_t current_time)
         button_state.release_time = current_time;
         uint32_t press_duration = button_state.release_time - button_state.press_time;
 
-        BSP_LED_Off(LED_GREEN);
+        // BSP_LED_Off(LED_GREEN);
 
         // Check for long press
         if(press_duration > LONG_PRESS_TIME)
@@ -66,16 +66,16 @@ InputAction Input_ProcessButton(uint8_t button_pressed, uint32_t current_time)
             uint32_t wait_start = HAL_GetTick();
             while(HAL_GetTick() - wait_start < DOUBLE_CLICK_TIME)
             {
-                if(BSP_PB_GetState(BUTTON_USER))
-                {
-                    // Wait for release
-                    while(BSP_PB_GetState(BUTTON_USER))
-                    {
-                        HAL_Delay(10);
-                    }
-                    button_state.press_count = 2;
-                    break;
-                }
+                // if(BSP_PB_GetState(BUTTON_USER))
+                // {
+                //     // Wait for release
+                //     while(BSP_PB_GetState(BUTTON_USER))
+                //     {
+                //         HAL_Delay(10);
+                //     }
+                //     button_state.press_count = 2;
+                //     break;
+                // }
                 HAL_Delay(10);
             }
 

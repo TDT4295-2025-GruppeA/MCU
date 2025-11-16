@@ -7,7 +7,7 @@
 // SPI Configuration
 #define FPGA_SPI_INSTANCE     hspi1
 #define FPGA_CS_PORT          GPIOA
-#define FPGA_CS_PIN           GPIO_PIN_4
+#define FPGA_CS_PIN           GPIO_PIN_2
 #define SPI_TIMEOUT_MS        100
 
 // Protocol definitions for FPGA commands

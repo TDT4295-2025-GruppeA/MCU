@@ -4,7 +4,7 @@
 extern ADC_HandleTypeDef hadc1;
 extern SPI_HandleTypeDef hspi1;
 extern SPI_HandleTypeDef hspi3;
-extern UART_HandleTypeDef huart1;
+// extern UART_HandleTypeDef huart1;
 
 void Peripherals_Init(void)
 {
@@ -13,7 +13,7 @@ void Peripherals_Init(void)
 
     /* Initialize peripherals */
     MX_ICACHE_Init();
-    MX_USART1_UART_Init();
+    // MX_USART1_UART_Init();
     MX_SPI1_Init();
     MX_SPI3_Init();
     MX_ADC1_Init();
@@ -24,8 +24,8 @@ void Peripherals_Init(void)
     }
 
     /* Initialize BSP components */
-    BSP_LED_Init(LED_GREEN);
-    BSP_PB_Init(BUTTON_USER, BUTTON_MODE_EXTI);
+    // BSP_LED_Init(LED_GREEN);
+    // BSP_PB_Init(BUTTON_USER, BUTTON_MODE_EXTI);
 }
 
 void MX_GPIO_Init(void)
@@ -45,9 +45,9 @@ void MX_GPIO_Init(void)
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-    /* Configure FPGA CS pin (PA4) */
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
-    GPIO_InitStruct.Pin = GPIO_PIN_4;
+    /* Configure FPGA CS pin (PA2) */
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, GPIO_PIN_SET);
+    GPIO_InitStruct.Pin = GPIO_PIN_2;
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
@@ -64,23 +64,23 @@ void MX_ICACHE_Init(void)
     }
 }
 
-void MX_USART1_UART_Init(void)
-{
-    huart1.Instance = USART1;
-    huart1.Init.BaudRate = 115200;
-    huart1.Init.WordLength = UART_WORDLENGTH_8B;
-    huart1.Init.StopBits = UART_STOPBITS_1;
-    huart1.Init.Parity = UART_PARITY_NONE;
-    huart1.Init.Mode = UART_MODE_TX_RX;
-    huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-    huart1.Init.OverSampling = UART_OVERSAMPLING_16;
-    huart1.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
-    huart1.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+// void MX_USART1_UART_Init(void)
+// {
+//     huart1.Instance = USART1;
+//     huart1.Init.BaudRate = 115200;
+//     huart1.Init.WordLength = UART_WORDLENGTH_8B;
+//     huart1.Init.StopBits = UART_STOPBITS_1;
+//     huart1.Init.Parity = UART_PARITY_NONE;
+//     huart1.Init.Mode = UART_MODE_TX_RX;
+//     huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+//     huart1.Init.OverSampling = UART_OVERSAMPLING_16;
+//     huart1.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+//     huart1.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
 
-    if (HAL_UART_Init(&huart1) != HAL_OK) {
-        Error_Handler();
-    }
-}
+//     if (HAL_UART_Init(&huart1) != HAL_OK) {
+//         Error_Handler();
+//     }
+// }
 
 void MX_SPI1_Init(void)
 {

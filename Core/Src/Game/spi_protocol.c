@@ -29,7 +29,7 @@ static SPI_HandleTypeDef* hspi = NULL;
 
 // SPI CS Pin
 #define SPI_CS_PORT GPIOA
-#define SPI_CS_PIN  GPIO_PIN_4
+#define SPI_CS_PIN  GPIO_PIN_2
 
 // Initialize SPI protocol
 void SPI_Protocol_Init(SPI_HandleTypeDef* spi_handle)

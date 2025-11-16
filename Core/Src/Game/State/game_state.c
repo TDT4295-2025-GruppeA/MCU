@@ -40,7 +40,7 @@ void StateManager_Reset(void)
     Obstacles_Reset();
     Renderer_ClearScene();
 
-    BSP_LED_Off(LED_GREEN);
+    // BSP_LED_Off(LED_GREEN);
     UART_Printf("Game reset\r\n");
 }
 
