@@ -15,7 +15,7 @@
 #define TIME_STEP ((float)UPDATE_INTERVAL / 1000.0f) // seconds per frame
 
 // Input mode: 0=binary, 1=analog
-static uint8_t input_mode = 2;
+static uint8_t input_mode = 0;
 
 // External handles
 extern SPI_HandleTypeDef hspi1;
