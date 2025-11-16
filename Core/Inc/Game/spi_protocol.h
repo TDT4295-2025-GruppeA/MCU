@@ -8,7 +8,7 @@
 // Comment out or remove this line to disable simulator forwarding in production builds.
 // #define SIM_UART
 // Command definitions
-#define CMD_RESET           0x00
+#define CMD_RESET           0x55
 #define CMD_BEGIN_UPLOAD    0xA0
 #define CMD_UPLOAD_TRIANGLE 0xA1
 #define CMD_ADD_INSTANCE    0xB0
