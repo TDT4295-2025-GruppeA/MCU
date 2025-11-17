@@ -152,7 +152,14 @@ static void _HandleInput(void)
             } else {
                 // Analog mode (full range)
                 uint32_t adc_val = Buttons_GetLastADCValue();
-                float norm = ((float)adc_val - (float)POT_CENTER) / (float)POT_CENTER;
+
+                if (adc_val < POT_CENTER - POT_SPAN) {
+                    adc_val = POT_CENTER - POT_SPAN;
+                } else if (adc_val > POT_CENTER + POT_SPAN) {
+                    adc_val = POT_CENTER + POT_SPAN;
+                }
+
+                float norm = -((float)adc_val - (float)POT_CENTER) / (POT_SPAN);
                 float edge_deadzone = (float)POT_DEADZONE / (float)POT_CENTER;
                 if(fabsf((float)adc_val - (float)POT_CENTER) < (float)POT_DEADZONE) {
                     player_input = 0.0f;

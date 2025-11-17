@@ -15,6 +15,7 @@
 #define POT_MAX_VALUE      16383    // 14-bit max value
 #define POT_CENTER         8192     // Middle position for 14-bit
 #define POT_DEADZONE       600     // Dead zone around center
+#define POT_SPAN           6000
 
 // Debounce time in milliseconds
 #define DEBOUNCE_TIME_MS    50

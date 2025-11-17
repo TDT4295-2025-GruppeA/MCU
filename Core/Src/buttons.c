@@ -26,18 +26,32 @@ void Buttons_Init(void) {
     __HAL_RCC_GPIOC_CLK_ENABLE();
     __HAL_RCC_ADC12_CLK_ENABLE();
 
-    // Configure PC0 as ANALOG input for ADC
-    GPIO_InitStruct.Pin = GPIO_PIN_0;
+    // Configure PC3 as ANALOG input for ADC
+    GPIO_InitStruct.Pin = GPIO_PIN_3;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
+    GPIO_InitStruct.Pin = GPIO_PIN_0;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_0, GPIO_PIN_RESET);
+    
+    GPIO_InitStruct.Pin = GPIO_PIN_1;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, GPIO_PIN_RESET);
+
     buttons_initialized = 1;
 
     // Read initial position - USE CHANNEL 1!
-    last_pot_value = Read_ADC_Channel(ADC_CHANNEL_1);
+    last_pot_value = Read_ADC_Channel(ADC_CHANNEL_4);
 
-    UART_Printf("Potentiometer initialized on PC0 (14-bit ADC)\r\n");
+    UART_Printf("Potentiometer initialized on PC3 (14-bit ADC)\r\n");
     UART_Printf("  Initial reading: %lu\r\n", last_pot_value);
     UART_Printf("  Left zone: < %d\r\n", POT_LEFT_THRESHOLD);
     UART_Printf("  Dead zone: %d - %d\r\n", POT_LEFT_THRESHOLD, POT_RIGHT_THRESHOLD);
@@ -52,7 +66,7 @@ void Buttons_Update(ADCButtonState* state) {
     uint32_t now = HAL_GetTick();
 
     // Read potentiometer value
-    uint32_t pot_value = Read_ADC_Channel(ADC_CHANNEL_1);
+    uint32_t pot_value = Read_ADC_Channel(ADC_CHANNEL_4);
     last_adc_value = pot_value;
 
     // Debug output every 40 calls

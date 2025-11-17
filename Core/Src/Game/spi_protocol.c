@@ -1,5 +1,7 @@
 #include "./Game/spi_protocol.h"
 #include "./Utilities/transform.h"
+#include "stm32u5xx_hal_spi.h"
+#include <stdint.h>
 #include <string.h>
 
 // External UART for debugging
@@ -44,7 +46,8 @@ void SPI_TransmitPacket(uint8_t* data, uint16_t size)
         // Pull CS low
         HAL_GPIO_WritePin(SPI_CS_PORT, SPI_CS_PIN, GPIO_PIN_RESET);
         // Transmit data
-        HAL_SPI_Transmit(hspi, data, size, 100);
+        uint8_t rx[2048];
+        HAL_SPI_TransmitReceive(hspi, data, rx, size, 100);
         // Send null byte due to error on FPGA side
         // (They're idiots)
         uint8_t dummy_data = 0;

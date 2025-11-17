@@ -1,5 +1,6 @@
 #include "adc_functions.h"
 #include "main.h"
+#include "stm32u5xx_hal_adc.h"
 
 extern ADC_HandleTypeDef hadc1;
 // ADC Channel reading function
@@ -9,7 +10,7 @@ uint32_t Read_ADC_Channel(uint32_t channel)
 
     sConfig.Channel = channel;
     sConfig.Rank = ADC_REGULAR_RANK_1;
-    sConfig.SamplingTime = ADC_SAMPLETIME_68CYCLES;
+    sConfig.SamplingTime = ADC_SAMPLETIME_12CYCLES;
     sConfig.SingleDiff = ADC_SINGLE_ENDED;
     sConfig.OffsetNumber = ADC_OFFSET_NONE;
     sConfig.Offset = 0;

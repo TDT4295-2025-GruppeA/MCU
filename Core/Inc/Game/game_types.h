@@ -7,8 +7,8 @@
 #define UPDATE_INTERVAL 5      // ms between updates
 #define RENDER_INTERVAL 20      // ms between updates
 #define FORWARD_SPEED   35.0f     // units per second
-#define PLAYER_STRAFE_ACCEL     350.0f   // units/sec^2 (acceleration)
-#define PLAYER_STRAFE_DECEL (PLAYER_STRAFE_ACCEL * 2.5f)
+#define PLAYER_STRAFE_ACCEL     700.0f   // units/sec^2 (acceleration)
+#define PLAYER_STRAFE_DECEL (PLAYER_STRAFE_ACCEL)
 #define PLAYER_STRAFE_MAX_SPEED 50.0f   // units/sec (max speed)
 #define WORLD_MIN_X     -50
 #define WORLD_MAX_X     50
