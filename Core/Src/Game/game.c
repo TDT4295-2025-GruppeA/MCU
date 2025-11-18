@@ -27,30 +27,12 @@ static void _HandleInput(float delta_time);
 static void UpdatePlayerStrafe(GameState* state, float delta_time, float input)
 {
     // input: -1 (left), 0 (none), 1 (right), or analog [-1,1] for joystick
-    float accel = PLAYER_STRAFE_ACCEL;
-    float decel = PLAYER_STRAFE_DECEL;
-    float max_speed = PLAYER_STRAFE_MAX_SPEED;
+    float target_speed = PLAYER_STRAFE_MAX_SPEED * input;
+
+    float error = state->player_strafe_speed - target_speed;
 
     // Accelerate based on input
-    state->player_strafe_speed += accel * input * delta_time;
-    // Clamp speed
-    if (state->player_strafe_speed > max_speed)
-        state->player_strafe_speed = max_speed;
-    if (state->player_strafe_speed < -max_speed)
-        state->player_strafe_speed = -max_speed;
-
-    // Decay speed toward zero if no input (simulate friction)
-    if (input == 0) {
-        if (state->player_strafe_speed > 0) {
-            state->player_strafe_speed -= decel * delta_time;
-            if (state->player_strafe_speed < 0)
-                state->player_strafe_speed = 0;
-        } else if (state->player_strafe_speed < 0) {
-            state->player_strafe_speed += decel * delta_time;
-            if (state->player_strafe_speed > 0)
-                state->player_strafe_speed = 0;
-        }
-    }
+    state->player_strafe_speed -= PLAYER_STRAFE_ACCEL * error * delta_time;
 
     // Move player by current speed
     GameLogic_MovePlayer(state, state->player_strafe_speed * delta_time);

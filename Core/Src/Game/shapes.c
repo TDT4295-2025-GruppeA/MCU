@@ -31,7 +31,7 @@ void Shapes_CreateGround(Shape3D* shape)
     shape->id = SHAPE_GROUND;
     shape->vertex_count = 4;
     shape->triangle_count = 2;
-    int16_t width = 200;
+    int16_t width = 300;
     int16_t height = 150; // Slightly below player
     // Vertices: large quad in XZ plane
     shape->vertices[0] = (Vertex3D){  width*0.5, height, 0}; // bottom right
