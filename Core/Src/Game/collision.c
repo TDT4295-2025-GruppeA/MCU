@@ -1,5 +1,6 @@
 #include "./Game/collision.h"
 #include "./Game/shapes.h"
+#include "uart_debug.h"
 #include <math.h>
 
 // Player collision box dimensions
