@@ -40,9 +40,9 @@ void Renderer_DrawFrame(GameState* state)
     uint8_t reset_data[] = {0x00, 0x00, 0x00, 0x00};
     SPI_TransmitPacket(reset_data, 4);
 
-    Position camera_pos = {0, 2, 6};
+    Position camera_pos = {0, 2.5, 6};
     Matrix3x3 cam_tilt, cam_roll, cam_rot;
-    Matrix_RotateX(&cam_tilt, 0.1f);
+    Matrix_RotateX(&cam_tilt, 0.15f);
     float camera_roll_angle = -state->player_strafe_speed / PLAYER_STRAFE_MAX_SPEED / 4;
     Matrix_RotateZ(&cam_roll, camera_roll_angle);
     Matrix_Multiply(&cam_rot, &cam_roll, &cam_tilt);
@@ -93,9 +93,7 @@ void Renderer_DrawFrame(GameState* state)
 
     // Render ground plane at origin
     Shape3D* ground = Shapes_GetGround();
-    Position ground_pos = {0, 0, 20};
-    Matrix3x3 ground_rot;
-    Matrix_Identity(&ground_rot);
+    Position ground_pos = {0, 0, 60};
     SPI_AddModelInstance(ground->id, &ground_pos, NULL, 0);
 
     // Render player at origin with banking

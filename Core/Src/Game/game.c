@@ -12,8 +12,6 @@
 #include <string.h>
 #include <stdint.h>
 
-#define TIME_STEP ((float)UPDATE_INTERVAL / 1000.0f) // seconds per frame
-
 // Input mode: 0=binary, 1=analog
 static uint8_t input_mode = 1;
 
@@ -23,10 +21,10 @@ extern SPI_HandleTypeDef hspi3;
 extern void UART_Printf(const char* format, ...);
 
 // Forward declarations of static functions
-static void _HandleInput(void);
+static void _HandleInput(float delta_time);
 
 // Helper: update player strafe movement (acceleration-based, supports joystick)
-static void UpdatePlayerStrafe(GameState* state, float input)
+static void UpdatePlayerStrafe(GameState* state, float delta_time, float input)
 {
     // input: -1 (left), 0 (none), 1 (right), or analog [-1,1] for joystick
     float accel = PLAYER_STRAFE_ACCEL;
@@ -34,7 +32,7 @@ static void UpdatePlayerStrafe(GameState* state, float input)
     float max_speed = PLAYER_STRAFE_MAX_SPEED;
 
     // Accelerate based on input
-    state->player_strafe_speed += accel * input * TIME_STEP;
+    state->player_strafe_speed += accel * input * delta_time;
     // Clamp speed
     if (state->player_strafe_speed > max_speed)
         state->player_strafe_speed = max_speed;
@@ -44,18 +42,18 @@ static void UpdatePlayerStrafe(GameState* state, float input)
     // Decay speed toward zero if no input (simulate friction)
     if (input == 0) {
         if (state->player_strafe_speed > 0) {
-            state->player_strafe_speed -= decel * TIME_STEP;
+            state->player_strafe_speed -= decel * delta_time;
             if (state->player_strafe_speed < 0)
                 state->player_strafe_speed = 0;
         } else if (state->player_strafe_speed < 0) {
-            state->player_strafe_speed += decel * TIME_STEP;
+            state->player_strafe_speed += decel * delta_time;
             if (state->player_strafe_speed > 0)
                 state->player_strafe_speed = 0;
         }
     }
 
     // Move player by current speed
-    GameLogic_MovePlayer(state, state->player_strafe_speed * TIME_STEP);
+    GameLogic_MovePlayer(state, state->player_strafe_speed * delta_time);
 }
 
 // Global game state
@@ -112,7 +110,7 @@ void Game_Update(uint32_t current_time)
 
     // Handle input
     Buttons_Update(&adc_buttons);
-    _HandleInput();
+    _HandleInput(delta_time);
 
     // Update game if playing
     if(game_state.state == GAME_STATE_PLAYING) {
@@ -135,7 +133,7 @@ void Game_Update(uint32_t current_time)
 }
 
 // Static function implementation
-static void _HandleInput(void)
+static void _HandleInput(float delta_time)
 {
     switch(game_state.state) {
         case GAME_STATE_PLAYING: {
@@ -171,7 +169,7 @@ static void _HandleInput(void)
                     player_input = norm / 2.0f;
                 }
             }
-            UpdatePlayerStrafe(&game_state, player_input);
+            UpdatePlayerStrafe(&game_state, delta_time, player_input);
             if(adc_buttons.left_long_press || adc_buttons.right_long_press) {
                 StateManager_TransitionTo(GAME_STATE_PLAYING);
             }

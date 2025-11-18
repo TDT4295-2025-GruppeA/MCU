@@ -5,10 +5,10 @@
 
 // ========== Game Constants ==========
 #define UPDATE_INTERVAL 5      // ms between updates
-#define RENDER_INTERVAL 20      // ms between updates
+#define RENDER_INTERVAL 15      // ms between renders
 #define FORWARD_SPEED   35.0f     // units per second
-#define PLAYER_STRAFE_ACCEL     700.0f   // units/sec^2 (acceleration)
-#define PLAYER_STRAFE_DECEL (PLAYER_STRAFE_ACCEL)
+#define PLAYER_STRAFE_ACCEL     500.0f   // units/sec^2 (acceleration)
+#define PLAYER_STRAFE_DECEL (PLAYER_STRAFE_ACCEL*0.7)
 #define PLAYER_STRAFE_MAX_SPEED 50.0f   // units/sec (max speed)
 #define WORLD_MIN_X     -50
 #define WORLD_MAX_X     50
@@ -17,7 +17,7 @@
 #define MAX_VERTICES    32       // Max vertices per shape
 #define MAX_TRIANGLES   16       // Max triangles per shape
 #define MAX_OBSTACLES   30       // Max obstacles on screen
-#define OBSTACLE_SPAWN_DIST 25  // Distance ahead to spawn obstacles
+#define OBSTACLE_SPAWN_DIST 50  // Distance ahead to spawn obstacles
 #define OBSTACLE_SPACING 5      // Min spacing between obstacles
 #define OBSTACLE_SPAWN_OFFSET 35.0f // Obstacles spawn within ±100 units of player X
 

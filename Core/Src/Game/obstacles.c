@@ -102,7 +102,7 @@ void Obstacles_Update(Position* player_pos, float delta_time)
         if(obstacle_pool[i].active)
         {
             // Remove obstacles that have passed behind the player
-            if(obstacle_pool[i].pos.z < -2)  // Behind player
+            if(obstacle_pool[i].pos.z < -1)  // Behind player
             {
                 obstacle_pool[i].active = 0;
                 obstacles_passed++;

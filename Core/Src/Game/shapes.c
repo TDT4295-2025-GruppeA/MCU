@@ -31,13 +31,13 @@ void Shapes_CreateGround(Shape3D* shape)
     shape->id = SHAPE_GROUND;
     shape->vertex_count = 4;
     shape->triangle_count = 2;
-    int16_t size = 10;
-    int16_t y = 0; // Slightly below player
+    int16_t width = 200;
+    int16_t height = 150; // Slightly below player
     // Vertices: large quad in XZ plane
-    shape->vertices[0] = (Vertex3D){ size, size/2, 0}; // bottom right
-    shape->vertices[1] = (Vertex3D){ -size, size/2, 0}; // bottom left
-    shape->vertices[2] = (Vertex3D){ -size, -size/2,  0}; // top left
-    shape->vertices[3] = (Vertex3D){ size, -size/2,  0}; // top right
+    shape->vertices[0] = (Vertex3D){  width*0.5, height, 0}; // bottom right
+    shape->vertices[1] = (Vertex3D){ -width*0.5, height, 0}; // bottom left
+    shape->vertices[2] = (Vertex3D){ -width*0.5, 0,  0}; // top left
+    shape->vertices[3] = (Vertex3D){  width*0.5, 0,  0}; // top right
     // Triangles
     shape->triangles[0] = (Triangle){1, 2, 0};
     shape->triangles[1] = (Triangle){0, 2, 3};
@@ -79,7 +79,7 @@ void Shapes_CreatePlayer(Shape3D* shape)
     shape->triangles[2] = (Triangle){1, 3, 0};
 
     // Bottom face
-    shape->triangles[3] = (Triangle){3, 0, 2};
+    shape->triangles[3] = (Triangle){3, 2, 0};
 
     Shapes_CalculateBounds(shape, &shape->width, &shape->height, &shape->depth);
 
